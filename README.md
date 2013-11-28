@@ -2,67 +2,78 @@ hoshi
 =====
 
 Hoshi parser generator library. This isn't ready to share yet but in
-case someone stumbles across this project I want to provide a
-description of what it will do, what works now and the next steps.
-Hopefully this will at least help you decide whether to check back
-later.
+case someone stumbles across it I want to provide a description of
+what it will do, what works now, and the next steps. Hopefully this
+will help you decide whether to check back later.
 
 Hoshi is a parser generator implemented as a native code library in
 C++11. Most parser generators are implemented as code generators and
 there are a number of advantages to that, but implementing as a
-library has some advantages as well. 
+library has some significant advantages as well. 
 
 The most important features are:
 
- - The parsing technology is LALR(k). One can get into almost
-   religious discussions about the best parsing technology, but IMHO
-   LR variants allow the most natural rules and make tree building the
-   simplest.
+ - The parsing methodology is LALR(k). One can get into almost
+   religious discussions about the best parsing methodology, but IMHO
+   LR variants allow the most natural rules and simplify tree
+   building.
 
- - The rules are given in BNF with a few extensions (grouping, '*',
-   '?' and '+'). There is also a special syntax for operator
-   precedence. All these extensions are just syntactic sugar and are
-   translated into pure BNF internally at an early stage.
+ - The rules are given in BNF with a few extensions (grouping, '|',
+   '*', '?' and '+'). There is also a special syntax for operator
+   precedence. All these extensions are just syntactic sugar
+   translated into pure BNF internally.
 
- - The scanner is a relatively simple DFA described in regular
-   expressions. By providing a some default rules for tokens
-   (anything in single quotes is its own regular expression) and a
-   library of common symbols very little must be specified for a
-   typical scanner.
+ - The scanner is a DFA specified by regular expressions. By
+   providing default rules for tokens (anything in single quotes
+   is its own regular expression) and a library of common tokens
+   very little must be specified for a typical scanner.
 
  - Error recovery is fully automatic using an enhanced forward move
-   technique. Relatively few spurious errors are reported no matter
-   how dense errors are found in the source.
+   algorithm. Relatively few spurious errors are reported no matter
+   how densely errors occur in the source.
 
- - There is a notation for AST creation attached to each rule. If no
-   specification is provided a concrete tree is returned but it's a
-   simple matter to describe the AST desired.
+ - There is a simple notation for AST creation attached to each rule.
+   If no specification is provided a concrete tree is returned but
+   it's a simple matter to describe the AST desired.
 
- - There is a guard mechanism to allow some feedback from the parser
-   to the scanner or even better, from a previous scanned token.
+ - There is a guard mechanism to allow feedback from the parser
+   to the scanner or from a previously scanned token.
 
 Everything described up to this point is working now in the source.
-The next steps are:
+The library is perfectly usable by C++ clients. The next steps are:
 
- - Create wrappers in python, java and C# that call the native code
+ - Create wrappers in python, Java and C# that call the native code
    library allowing the use of hoshi in those languages as well.
 
  - Write documentation. There are a lot of features here and it's
-   unusable without documentation. But I want to get the multiple
-   language support working first.
+   unusable without documentation. Although documentation is essential
+   multiple language support is a key feature so I don't really want
+   to encourage sharing until that's done. That's why documentaion is
+   my second priority.
 
 Once I get this far here are some things I may or may not do:
 
- - Extend the parsing technology to LR(k). This is a bit more
-   powerful but I haven't convinced myself it's worth the effort. 
+ - Extend the parsing methodology to LR(k). This is a bit more
+   powerful than LALR(k) but I haven't convinced myself it's worth
+   the effort. I haven't encountered any grammars that are LR(k)
+   but are not LALR(k).
 
  - Make the parsers generated more efficient by removing LR(0) reduce
-   states, or more likely removing chains of unit production. Again,
-   I'm not convinced it's worth the effort because the parsers are
-   pretty small and fast now.
+   states or removing chains of unit productions. Again, I'm not
+   convinced it's worth the effort because the parsers are pretty
+   small and fast now.
 
 As I write this I'm thinking I should be at the end of the
-documentation stage by March of 2014. In the meantime you can take a
-peek at DateTime.cpp in the tstsrc library to see a small sample and
-get a bit more of an idea how this will be used.
+documentation stage by March of 2014. In the meantime you can see some
+samples in the tstsrc directory. There are also more complex grammars
+in the libsrc directory. Hoshi was used to implement itself through
+bootstrapping, so you can find grammars for the overall grammar
+syntax, for the regular expression syntax and for the character set
+syntax in the libsrc directory.
+
+I find the DateTime example interesting. It's not a very complex
+grammar, and in fact it could be implemented with an elaborate regular
+expression. It's simpler and clearer as a grammar, though. I'm
+interested in how many other small applications of parsing technology
+I'll find when I make use of it simple enough.
 
