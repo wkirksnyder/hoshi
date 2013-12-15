@@ -276,10 +276,10 @@ class Parser:
             self.this_handle = HOSHI.py_parser_new_parser()
             return
 
-        if len(args) > 1 or not isinstance(args[1], Parser): 
+        if len(args) > 1 or not isinstance(args[0], Parser): 
             raise TypeError("A single Hoshi.Parser is required to clone")
 
-        self.this_handle = HOSHI.py_parser_clone_parser(c_int64(args[0]))
+        self.this_handle = HOSHI.py_parser_clone_parser(c_int64(args[0].this_handle))
 
     #
     #  ~Parser()                                                       
