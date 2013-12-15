@@ -41,6 +41,12 @@ namespace hoshi
 using namespace std;
 
 //
+//  Missing argument flag. 
+//
+
+map<string, int> ParserData::kind_map_missing;
+
+//
 //  wiring tables                                
 //  -------------                                
 //                                               

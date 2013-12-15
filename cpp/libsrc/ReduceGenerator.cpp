@@ -359,7 +359,7 @@ void ReduceGenerator::generate()
                           root->get_location(),
                           ICodeOperand(ctx.base_ptr));
 
-                if ((debug_flags & DebugFlags::DebugAstHandlers) != 0)
+                if ((debug_flags & DebugType::DebugAstHandlers) != 0)
                 {
                     prsi.dump_grammar_ast(root);
                 }
@@ -414,7 +414,7 @@ void ReduceGenerator::handle_former(ReduceGenerator& redg,
         handle_error(redg, root, ctx);
     }
 
-    if ((redg.debug_flags & DebugFlags::DebugAstHandlers) != 0)
+    if ((redg.debug_flags & DebugType::DebugAstHandlers) != 0)
     {
         cout << "ReduceGenerator " 
              << redg.prsi.get_grammar_kind_string(root->get_kind()) << ": " 
@@ -510,6 +510,18 @@ void ReduceGenerator::handle_ast_former(ReduceGenerator& redg,
     for (int i = 0; i < root->get_num_children(); i++)
     {
         handle_former(redg, root->get_child(i), cctx);
+    }
+
+    if (cctx.processed_set.find(AstType::AstIdentifier) == cctx.processed_set.end() &&
+        cctx.processed_set.find(AstType::AstAstKind) == cctx.processed_set.end())
+    {
+
+        int64_t kind = redg.prsd.get_kind_force(ctx.rule->lhs->symbol_name);
+
+        redg.code.emit(OpcodeType::OpcodeAstKindNum,
+                       root->get_location(),
+                       ICodeOperand(kind));
+    
     }
 
 }

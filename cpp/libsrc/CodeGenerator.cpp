@@ -548,19 +548,19 @@ void CodeGenerator::generate()
     //  The function body begins here. Optimize the intermediate code. 
     //
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Beginning code generation: " << prsi.elapsed_time_string() << endl;
     }
 
-    if ((debug_flags & DebugFlags::DebugICode) != 0)
+    if ((debug_flags & DebugType::DebugICode) != 0)
     {
         dump_icode();
     }
 
     optimize();
 
-    if ((debug_flags & DebugFlags::DebugICode) != 0)
+    if ((debug_flags & DebugType::DebugICode) != 0)
     {
         dump_icode();
     }
@@ -843,7 +843,7 @@ void CodeGenerator::generate()
 
     }
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Finished code generation: " << prsi.elapsed_time_string() << endl;
     }

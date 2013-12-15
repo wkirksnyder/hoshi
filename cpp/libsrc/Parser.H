@@ -74,28 +74,26 @@ private:
 };
 
 //
-//  DebugFlags                                                       
+//  DebugType                                                       
 //  ----------                                                       
 //                                                                   
 //  We allow quite a few debugging options. It's the only way to get 
 //  through such a large library.                                    
 //
 
-enum DebugFlags : int64_t
-{
-
-    DebugProgress       = 1 <<   0,
-    DebugAstHandlers    = 1 <<   1,
-    DebugGrammar        = 1 <<   2,
-    DebugGrammarAst     = 1 <<   3,
-    DebugLalr           = 1 <<   4,
-    DebugScanner        = 1 <<   5,
-    DebugActions        = 1 <<   6,
-    DebugICode          = 1 <<   7,
-    DebugVCodeExec      = 1 <<   8,
-    DebugScanToken      = 1 <<   9,
-    DebugParseAction    = 1 <<  10
-
+enum DebugType : int64_t
+{ 
+    DebugProgress    = 1 <<   0,
+    DebugAstHandlers = 1 <<   1,
+    DebugGrammar     = 1 <<   2,
+    DebugGrammarAst  = 1 <<   3,
+    DebugLalr        = 1 <<   4,
+    DebugScanner     = 1 <<   5,
+    DebugActions     = 1 <<   6,
+    DebugICode       = 1 <<   7,
+    DebugVCodeExec   = 1 <<   8,
+    DebugScanToken   = 1 <<   9,
+    DebugParseAction = 1 <<  10
 };
 
 //
@@ -292,8 +290,8 @@ public:
 
     bool is_grammar_loaded();
     bool is_grammar_failed();
-    bool is_parse_successful();
-    bool is_parse_failed();
+    bool is_source_loaded();
+    bool is_source_failed();
 
     //
     //  Result generators.
@@ -322,6 +320,7 @@ public:
     std::map<std::string, int> get_ast_kind_map() const;
 
     Ast* get_ast();
+    std::string get_encoded_ast();
 
     void dump_ast(Ast* ast,
                   std::ostream& os = std::cout,
@@ -340,9 +339,13 @@ public:
     int get_error_count() const;
     int get_warning_count() const;
     std::vector<ErrorMessage> get_error_messages();
+    std::string get_encoded_error_messages();
+
     void dump_source(const Source& src,
                      std::ostream& os = std::cout,
                      int indent = 0) const;
+
+    std::string get_source_list(const Source& src, int indent = 0) const;
 
     //
     //  Encode and decode. 
@@ -353,7 +356,7 @@ public:
     std::string encode() const;
 
     void decode(const std::string& str,
-                const std::map<std::string, int>& ast_kind_map);
+                const std::map<std::string, int>& ast_kind_map = kind_map_missing);
 
 private:
 

@@ -142,14 +142,14 @@ bool Parser::is_grammar_failed()
     return impl->is_grammar_failed();
 }
 
-bool Parser::is_parse_successful()
+bool Parser::is_source_loaded()
 {
-    return impl->is_parse_successful();
+    return impl->is_source_loaded();
 }
 
-bool Parser::is_parse_failed()
+bool Parser::is_source_failed()
 {
-    return impl->is_parse_failed();
+    return impl->is_source_failed();
 }
 
 //
@@ -246,6 +246,18 @@ map<string, int> Parser::get_ast_kind_map() const
 Ast* Parser::get_ast()
 {
     return impl->get_ast();
+}
+
+//
+//  get_encoded_ast                                        
+//  ---------------                                        
+//                                                 
+//  Return the result Ast from a successful parse encoded as a string.
+//
+
+string Parser::get_encoded_ast()
+{
+    return impl->get_encoded_ast();
 }
 
 //
@@ -370,6 +382,18 @@ vector<ErrorMessage> Parser::get_error_messages()
 }
 
 //
+//  get_encoded_error_messages                                   
+//  --------------------------                                   
+//                                                       
+//  Return the list of error messages in location order as a string.
+//
+
+string Parser::get_encoded_error_messages()
+{
+    return impl->get_encoded_error_messages();
+}
+
+//
 //  dump_source                         
 //  -----------                         
 //                                      
@@ -381,6 +405,18 @@ void Parser::dump_source(const Source& src,
                          int indent) const
 {
     impl->dump_source(src, os, indent);
+}
+
+//
+//  get_source_list
+//  ---------------                         
+//                                      
+//  Return the source list as a string. 
+//
+
+string Parser::get_source_list(const Source& src, int indent) const
+{
+    return impl->get_source_list(src, indent);
 }
 
 //

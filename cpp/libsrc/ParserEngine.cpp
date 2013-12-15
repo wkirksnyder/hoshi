@@ -411,7 +411,7 @@ void ParserEngine::parse()
             case ParseActionType::ActionLaShift:
             {
 
-                if ((debug_flags & DebugFlags::DebugParseAction) != 0)
+                if ((debug_flags & DebugType::DebugParseAction) != 0)
                 {
                     cout << "LaShift: " << goto_state << endl;
                 }
@@ -442,7 +442,7 @@ void ParserEngine::parse()
             case ParseActionType::ActionShift:
             {
 
-                if ((debug_flags & DebugFlags::DebugParseAction) != 0)
+                if ((debug_flags & DebugType::DebugParseAction) != 0)
                 {
                     cout << "Shift: " << goto_state << endl;
                 }
@@ -489,7 +489,7 @@ void ParserEngine::parse()
             case ParseActionType::ActionReduce:
             {
 
-                if ((debug_flags & DebugFlags::DebugParseAction) != 0)
+                if ((debug_flags & DebugType::DebugParseAction) != 0)
                 {
                     cout << "Reduce: " << prsd.rule_text[rule_num] << endl;
                 }
@@ -502,7 +502,7 @@ void ParserEngine::parse()
                 if (prsd.rule_size[rule_num] >= state_stack.size())
                 {
 
-                    if ((debug_flags & DebugFlags::DebugParseAction) != 0)
+                    if ((debug_flags & DebugType::DebugParseAction) != 0)
                     {
                         cout << "Restarting at fallback state" << endl;
                     }
@@ -583,7 +583,7 @@ void ParserEngine::parse()
             case ParseActionType::ActionRestart:
             {
 
-                if ((debug_flags & DebugFlags::DebugParseAction) != 0)
+                if ((debug_flags & DebugType::DebugParseAction) != 0)
                 {
                     cout << "Restart: " << goto_state << endl;
                 }
@@ -618,7 +618,7 @@ void ParserEngine::parse()
             case ParseActionType::ActionAccept:
             {
 
-                if ((debug_flags & DebugFlags::DebugParseAction) != 0)
+                if ((debug_flags & DebugType::DebugParseAction) != 0)
                 {
                     cout << "Accept" << endl;
                 }
@@ -663,7 +663,7 @@ void ParserEngine::parse()
             case ParseActionType::ActionError:
             {
 
-                if ((debug_flags & DebugFlags::DebugParseAction) != 0)
+                if ((debug_flags & DebugType::DebugParseAction) != 0)
                 {
                     cout << "Error" << endl;
                 }
@@ -1002,7 +1002,7 @@ void ParserEngine::get_token()
 
     call_vm(prsd.scanner_pc);
 
-    if ((debug_flags & DebugFlags::DebugScanToken) != 0)
+    if ((debug_flags & DebugType::DebugScanToken) != 0)
     {
 
         cout << "Scanned token " 
@@ -1238,7 +1238,7 @@ void ParserEngine::call_vm(int64_t pc)
     while (pc >= 0)
     {
 
-        if ((debug_flags & DebugFlags::DebugVCodeExec) != 0)
+        if ((debug_flags & DebugType::DebugVCodeExec) != 0)
         {
 
             VCodeInstruction instruction = prsd.instruction_list[pc];

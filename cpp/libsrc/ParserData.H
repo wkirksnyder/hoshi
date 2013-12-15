@@ -247,9 +247,11 @@ public:
 
     std::string encode() const;
     void decode(const std::string& str,
-                const std::map<std::string, int>& ast_types);
+                const std::map<std::string, int>& ast_types = kind_map_missing);
 
 private:
+
+    static std::map<std::string, int> kind_map_missing;
 
     //
     //  String encoding constants. 

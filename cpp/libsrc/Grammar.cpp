@@ -453,14 +453,14 @@ void Grammar::extract()
     //  Log progress. 
     //
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Beginning grammar extraction: "
              << prsi.elapsed_time_string()
              << endl;
     }
 
-    if ((debug_flags & DebugFlags::DebugAstHandlers) != 0)
+    if ((debug_flags & DebugType::DebugAstHandlers) != 0)
     {
         prsi.dump_grammar_ast(root);
     }
@@ -724,12 +724,12 @@ void Grammar::extract()
     //  Dump all our tables if desired. 
     //
 
-    if ((debug_flags & DebugFlags::DebugGrammar) != 0)
+    if ((debug_flags & DebugType::DebugGrammar) != 0)
     {
         dump_grammar();
     }
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Finished grammar extraction: "
              << prsi.elapsed_time_string()
@@ -761,7 +761,7 @@ void Grammar::handle_extract(Grammar& gram, Ast* root, Context& ctx)
         handle_error(gram, root, ctx);
     }
   
-    if ((gram.debug_flags & DebugFlags::DebugAstHandlers) != 0)
+    if ((gram.debug_flags & DebugType::DebugAstHandlers) != 0)
     {
         cout << "Grammar handler: "
              << gram.prsi.get_grammar_kind_string(root->get_kind()) << ": " 
@@ -829,7 +829,7 @@ void Grammar::handle_list(Grammar& gram, Ast* root, Context& ctx)
 //  handle_lookaheads                                                 
 //  -----------------                                                 
 //                                                                    
-//  Lookaheads are the `k' in LR(k). It's just an integer (hopefully a 
+//  Lookaheads are the `k' in LALR(k). It's just an integer (hopefully a 
 //  small one) that we set in the parser generator.                   
 //
 
@@ -2449,7 +2449,7 @@ void Grammar::dump_tokens(std::ostream& os, int indent) const
 
         os << endl;
 
-        if ((debug_flags & DebugFlags::DebugGrammarAst) != 0 &&
+        if ((debug_flags & DebugType::DebugGrammarAst) != 0 &&
             symbol->regex_list_ast != nullptr &&
             symbol->regex_list_ast->get_kind() != AstType::AstNull)
         {
@@ -2457,7 +2457,7 @@ void Grammar::dump_tokens(std::ostream& os, int indent) const
             os << endl;
         }
 
-        if ((debug_flags & DebugFlags::DebugGrammarAst) != 0 &&
+        if ((debug_flags & DebugType::DebugGrammarAst) != 0 &&
             symbol->action_ast != nullptr &&
             symbol->action_ast->get_kind() != AstType::AstNull)
         {
@@ -2572,7 +2572,7 @@ void Grammar::dump_rules(std::ostream& os, int indent) const
 
         os << endl;
 
-        if ((debug_flags & DebugFlags::DebugGrammarAst) != 0 &&
+        if ((debug_flags & DebugType::DebugGrammarAst) != 0 &&
             rule->ast_former_ast != nullptr &&
             rule->ast_former_ast->get_kind() != AstType::AstNull)
         {
@@ -2580,7 +2580,7 @@ void Grammar::dump_rules(std::ostream& os, int indent) const
             os << endl;
         }
 
-        if ((debug_flags & DebugFlags::DebugGrammarAst) != 0 &&
+        if ((debug_flags & DebugType::DebugGrammarAst) != 0 &&
             rule->action_ast != nullptr &&
             rule->action_ast->get_kind() != AstType::AstNull)
         {

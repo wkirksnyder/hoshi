@@ -851,7 +851,7 @@ char *ActionGenerator::condition_handler_name[]
 void ActionGenerator::generate_action(Ast* root)
 {
 
-    if ((debug_flags & DebugFlags::DebugAstHandlers) != 0)
+    if ((debug_flags & DebugType::DebugAstHandlers) != 0)
     {
         prsi.dump_grammar_ast(root);
     }
@@ -873,7 +873,7 @@ void ActionGenerator::generate_condition(Ast* root,
                                          ICodeLabel* false_label)
 {
 
-    if ((debug_flags & DebugFlags::DebugAstHandlers) != 0)
+    if ((debug_flags & DebugType::DebugAstHandlers) != 0)
     {
         prsi.dump_grammar_ast(root);
     }
@@ -910,7 +910,7 @@ void ActionGenerator::handle_statement(ActionGenerator& actg,
         handle_statement_error(actg, root, ctx);
     }
 
-    if ((actg.debug_flags & DebugFlags::DebugActions) != 0)
+    if ((actg.debug_flags & DebugType::DebugActions) != 0)
     {
         cout << "ActionGenerator "
              << actg.prsi.get_grammar_kind_string(root->get_kind()) << ": " 
@@ -1031,7 +1031,7 @@ void ActionGenerator::handle_expression(ActionGenerator& actg,
         handle_expression_error(actg, root, ctx);
     }
 
-    if ((actg.debug_flags & DebugFlags::DebugActions) != 0)
+    if ((actg.debug_flags & DebugType::DebugActions) != 0)
     {
         cout << "ActionGenerator "
              << actg.prsi.get_grammar_kind_string(root->get_kind()) << ": " 
@@ -1322,7 +1322,7 @@ void ActionGenerator::handle_condition(ActionGenerator& actg,
         handle_condition_error(actg, root, ctx);
     }
 
-    if ((actg.debug_flags & DebugFlags::DebugActions) != 0)
+    if ((actg.debug_flags & DebugType::DebugActions) != 0)
     {
         cout << "ActionGenerator "
              << actg.prsi.get_grammar_kind_string(root->get_kind()) << ": " 

@@ -96,7 +96,7 @@ LalrGenerator::~LalrGenerator()
 void LalrGenerator::generate()
 {
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Beginning parser generation: " << prsi.elapsed_time_string() << endl;
     }
@@ -107,12 +107,12 @@ void LalrGenerator::generate()
 
     find_first_sets();
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "First sets generated: " << prsi.elapsed_time_string() << endl;
     }
 
-    if ((debug_flags & DebugFlags::DebugLalr) != 0)
+    if ((debug_flags & DebugType::DebugLalr) != 0)
     {
         dump_first_sets();
     }
@@ -132,7 +132,7 @@ void LalrGenerator::generate()
 
     build_lr0_automaton();
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "LR(0) automaton built: " 
              << state_list.size() << " states, "
@@ -149,7 +149,7 @@ void LalrGenerator::generate()
 
     find_lalr1_lookaheads();
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Lookaheads found: " 
              << state_list.size() << " states, "
@@ -157,7 +157,7 @@ void LalrGenerator::generate()
              << endl;
     }
 
-    if ((debug_flags & DebugFlags::DebugLalr) != 0)
+    if ((debug_flags & DebugType::DebugLalr) != 0)
     {
         dump_automaton("LALR(1) Automaton");
     }
@@ -202,12 +202,12 @@ void LalrGenerator::generate()
         add_error_recovery();
     }
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Finished automaton generation: " << prsi.elapsed_time_string() << endl;
     }
 
-    if ((debug_flags & DebugFlags::DebugLalr) != 0)
+    if ((debug_flags & DebugType::DebugLalr) != 0)
     {
         dump_automaton("LALR(k) Automaton");
     }
@@ -222,7 +222,7 @@ void LalrGenerator::generate()
         return;
     }
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Finished saving parse tables: " << prsi.elapsed_time_string() << endl;
     }

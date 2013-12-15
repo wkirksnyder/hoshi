@@ -353,7 +353,7 @@ ScannerGenerator::~ScannerGenerator()
 void ScannerGenerator::generate()
 {
 
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Beginning scanner generation: "
              << prsi.elapsed_time_string() << endl;
@@ -365,7 +365,7 @@ void ScannerGenerator::generate()
     //
 
     construct_nfa();
-    if ((debug_flags & DebugFlags::DebugScanner) != 0)
+    if ((debug_flags & DebugType::DebugScanner) != 0)
     {
         prsi.log_heading("NFA scanner: " + prsi.elapsed_time_string());
         dump_automaton(nfa_start_state);
@@ -376,7 +376,7 @@ void ScannerGenerator::generate()
     //
 
     nfa_to_dfa();
-    if ((debug_flags & DebugFlags::DebugScanner) != 0)
+    if ((debug_flags & DebugType::DebugScanner) != 0)
     {
         prsi.log_heading("DFA scanner: " + prsi.elapsed_time_string());
         dump_automaton(dfa_start_state);
@@ -387,7 +387,7 @@ void ScannerGenerator::generate()
     //
 
     minimize_dfa();
-    if ((debug_flags & DebugFlags::DebugScanner) != 0)
+    if ((debug_flags & DebugType::DebugScanner) != 0)
     {
         prsi.log_heading("DFA scanner after optimizing: " + prsi.elapsed_time_string());
         dump_automaton(dfa_start_state);
@@ -399,7 +399,7 @@ void ScannerGenerator::generate()
     //
 
     create_vmcode();
-    if ((debug_flags & DebugFlags::DebugProgress) != 0)
+    if ((debug_flags & DebugType::DebugProgress) != 0)
     {
         cout << "Finished scanner generation: " << prsi.elapsed_time_string() << endl;
     }
@@ -441,7 +441,7 @@ void ScannerGenerator::construct_nfa()
             Ast* guard_ast = token->regex_list_ast->get_child(i)->get_child(0);
             Ast* regex_ast = token->regex_list_ast->get_child(i)->get_child(1);
 
-            if ((debug_flags & DebugFlags::DebugAstHandlers) != 0)
+            if ((debug_flags & DebugType::DebugAstHandlers) != 0)
             {
                 prsi.dump_grammar_ast(regex_ast);
             }
@@ -478,7 +478,7 @@ void ScannerGenerator::handle_build_nfa(ScannerGenerator& scan, Ast* root, Conte
         handle_error(scan, root, ctx);
     }
 
-    if ((scan.debug_flags & DebugFlags::DebugAstHandlers) != 0)
+    if ((scan.debug_flags & DebugType::DebugAstHandlers) != 0)
     {
         cout << "ScannerGenerator "
              << scan.prsi.get_grammar_kind_string(root->get_kind()) << ": " 

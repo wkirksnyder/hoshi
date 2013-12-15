@@ -40,10 +40,16 @@ The most important features are:
    to the scanner or from a previously scanned token.
 
 Everything described up to this point is working now in the source.
-The library is perfectly usable by C++ clients. The next steps are:
+The next steps are:
 
  - Create wrappers in python, Java and C# that call the native code
    library allowing the use of hoshi in those languages as well.
+
+This step is in progress. The most recent check-in includes a python
+wrapper, so everything works for both C++ and python clients. Writing a
+wrapper in python has turned out to be straightforward using the
+ctypes module. Somewhat tedious of course but pretty systematic. Java
+and C# should be similar.
 
  - Write documentation. There are a lot of features here and it's
    unusable without documentation. Although documentation is essential
@@ -61,7 +67,9 @@ Once I get this far here are some things I may or may not do:
  - Make the parsers generated more efficient by removing LR(0) reduce
    states or removing chains of unit productions. Again, I'm not
    convinced it's worth the effort because the parsers are pretty
-   small and fast now.
+   small and fast now. A lot of the literature around parsing assumes
+   much older technology where efficiency was more important than it
+   is today.
 
 As I write this I'm thinking I should be at the end of the
 documentation stage by March of 2014. In the meantime you can see some

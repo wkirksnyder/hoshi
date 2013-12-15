@@ -99,8 +99,8 @@ public:
 
     bool is_grammar_loaded();
     bool is_grammar_failed();
-    bool is_parse_successful();
-    bool is_parse_failed();
+    bool is_source_loaded();
+    bool is_source_failed();
 
     //
     //  Result generators.
@@ -128,7 +128,8 @@ public:
 
     std::map<std::string, int> get_ast_kind_map() const;
 
-    Ast* get_ast();
+    Ast* get_ast() const;
+    std::string get_encoded_ast() const;
 
     void dump_ast(Ast* ast,
                   std::ostream& os = std::cout,
@@ -147,10 +148,13 @@ public:
     int get_error_count() const;
     int get_warning_count() const;
     std::vector<ErrorMessage> get_error_messages();
+    std::string get_encoded_error_messages();
 
     void dump_source(const Source& src,
                      std::ostream& os = std::cout,
                      int indent = 0) const;
+
+    std::string get_source_list(const Source& src, int indent = 0) const;
 
     //
     //  Encode and decode. 
@@ -161,7 +165,7 @@ public:
     std::string encode() const;
 
     void decode(const std::string& str,
-                const std::map<std::string, int>& ast_kind_map);
+                const std::map<std::string, int>& ast_kind_map = kind_map_missing);
 
     //
     //  Log utilities. 
@@ -200,6 +204,10 @@ private:
     void adjust_location(Ast* root, int64_t adjustment);
     void get_source_string(Ast* root, std::string& source, int64_t& adjustment);
     void expand_subtrees(Ast* root, bool& any_changes, int64_t debug_flags);
+
+    void encode_int64(const int64_t i, std::ostream& os) const;
+    void encode_string(const std::string& s, std::ostream& os) const;
+    void encode_ast(const Ast* a, std::ostream& os) const;
 
 };
 
