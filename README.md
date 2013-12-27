@@ -45,11 +45,10 @@ The next steps are:
  - Create wrappers in python, Java and C# that call the native code
    library allowing the use of hoshi in those languages as well.
 
-This step is in progress. The most recent check-in includes a python
-wrapper, so everything works for both C++ and python clients. Writing a
-wrapper in python has turned out to be straightforward using the
-ctypes module. Somewhat tedious of course but pretty systematic. Java
-and C# should be similar.
+Two down, one to go. The most recent check-in includes wrappers for Java
+and python so everything works for C++, Java and python clients. So
+far these have been tedious but straightforward. C# should be even
+easier because it's fairly similar to Java.
 
  - Write documentation. There are a lot of features here and it's
    unusable without documentation. Although documentation is essential
@@ -70,6 +69,13 @@ Once I get this far here are some things I may or may not do:
    small and fast now. A lot of the literature around parsing assumes
    much older technology where efficiency was more important than it
    is today.
+
+ - More client interfaces. I'm not sure what else would be useful
+   here. Although I don't know much about them, I think the Java
+   library will cover the other jvm languages and C# will cover the
+   other clr languages. C++ seems to be nearly the last man standing
+   among the languages that generate native code. That leaves other
+   scripting languages. 
 
 As I write this I'm thinking I should be at the end of the
 documentation stage by March of 2014. In the meantime you can see some

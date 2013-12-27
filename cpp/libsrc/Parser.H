@@ -297,18 +297,18 @@ public:
     //  Result generators.
     //
 
-    void set_ast_kind_map(const std::map<std::string, int>& ast_kind_map);
+    void set_kind_map(const std::map<std::string, int>& kind_map);
 
     void generate(Ast* ast,
                   const Source& src,
-                  const std::map<std::string, int>& ast_kind_map = kind_map_missing,
+                  const std::map<std::string, int>& kind_map = kind_map_missing,
                   const int64_t debug_flags = 0);  
 
     Ast* generate_ast(const Source& src,
                       const int64_t debug_flags = 0);
 
     void generate(const Source& src,
-                  const std::map<std::string, int>& ast_kind_map = kind_map_missing,
+                  const std::map<std::string, int>& kind_map = kind_map_missing,
                   const int64_t debug_flags = 0);  
 
     void parse(const Source& src, const int64_t debug_flags = 0);
@@ -317,9 +317,10 @@ public:
     //  Result accessors and error message utilities. 
     //
 
-    std::map<std::string, int> get_ast_kind_map() const;
+    std::map<std::string, int> get_kind_map() const;
+    std::string get_encoded_kind_map() const;
 
-    Ast* get_ast();
+    Ast* get_ast() const;
     std::string get_encoded_ast();
 
     void dump_ast(Ast* ast,
@@ -356,7 +357,7 @@ public:
     std::string encode() const;
 
     void decode(const std::string& str,
-                const std::map<std::string, int>& ast_kind_map = kind_map_missing);
+                const std::map<std::string, int>& kind_map = kind_map_missing);
 
 private:
 

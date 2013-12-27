@@ -332,10 +332,12 @@ void py_parser_generate_1(ptrdiff_t this_handle,
                           char* source, 
                           int64_t debug_flags)
 {
+    
     ParserStatic::parser_generate_1(this_handle, 
                                     exception_handler_out(exception_ptr), 
                                     source, 
                                     debug_flags);
+    
 }
 
 //
@@ -351,10 +353,12 @@ void py_parser_parse(ptrdiff_t this_handle,
                      char* source, 
                      int64_t debug_flags)
 {
+    
     ParserStatic::parser_parse(this_handle, 
                                exception_handler_out(exception_ptr), 
                                source, 
                                debug_flags);
+    
 }
 
 //
@@ -373,6 +377,50 @@ void py_parser_get_encoded_ast(ptrdiff_t this_handle,
     ParserStatic::parser_get_encoded_ast(this_handle, 
                                          exception_handler_out(exception_ptr), 
                                          string_result_out(result_ptr));
+}
+
+//
+//  py_parser_get_encoded_kind_map
+//  ------------------------------
+//  
+//  Return the kind map encoded as a string. We use this method to pass the kind
+//  map to the caller to facilitate interlanguage calls.
+//
+
+extern "C" EXTERN
+void py_parser_get_encoded_kind_map(ptrdiff_t this_handle, 
+                                    void** exception_ptr, 
+                                    void** result_ptr)
+{
+    ParserStatic::parser_get_encoded_kind_map(this_handle, 
+                                              exception_handler_out(exception_ptr), 
+                                              string_result_out(result_ptr));
+}
+
+//
+//  py_parser_add_error
+//  -------------------
+//  
+//  Add another error to the message list. This is provided so that clients can
+//  use the parser message handler for all errors, not just parsing errors.
+//
+
+extern "C" EXTERN
+void py_parser_add_error(ptrdiff_t this_handle, 
+                         void** exception_ptr, 
+                         ErrorType error_type, 
+                         int64_t location, 
+                         char* short_message, 
+                         char* long_message)
+{
+    
+    ParserStatic::parser_add_error(this_handle, 
+                                   exception_handler_out(exception_ptr), 
+                                   error_type, 
+                                   location, 
+                                   short_message, 
+                                   long_message);
+    
 }
 
 //
@@ -401,32 +449,6 @@ int py_parser_get_warning_count(ptrdiff_t this_handle, void** exception_ptr)
 {
     return ParserStatic::parser_get_warning_count(this_handle, 
                                                   exception_handler_out(exception_ptr));
-}
-
-//
-//  py_parser_add_error
-//  -------------------
-//  
-//  Add another error to the message list. This is provided so that clients can
-//  use the parser message handler for all errors, not just parsing errors.
-//
-
-extern "C" EXTERN
-void py_parser_add_error(ptrdiff_t this_handle, 
-                         void** exception_ptr, 
-                         ErrorType error_type, 
-                         int64_t location, 
-                         char* short_message, 
-                         char* long_message)
-{
-    
-    ParserStatic::parser_add_error(this_handle, 
-                                   exception_handler_out(exception_ptr), 
-                                   error_type, 
-                                   location, 
-                                   short_message, 
-                                   long_message);
-    
 }
 
 //
@@ -488,17 +510,19 @@ void py_parser_encode(ptrdiff_t this_handle,
 }
 
 //
-//  py_parser_decode
-//  ----------------
+//  py_parser_decode_1
+//  ------------------
 //  
 //  Decode a previously created string into a parser
 //
 
 extern "C" EXTERN
-void py_parser_decode(ptrdiff_t this_handle, void** exception_ptr, char* str)
+void py_parser_decode_1(ptrdiff_t this_handle, 
+                        void** exception_ptr, 
+                        char* str)
 {
-    ParserStatic::parser_decode(this_handle, 
-                                exception_handler_out(exception_ptr), 
-                                str);
+    ParserStatic::parser_decode_1(this_handle, 
+                                  exception_handler_out(exception_ptr), 
+                                  str);
 }
 

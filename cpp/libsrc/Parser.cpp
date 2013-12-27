@@ -3,7 +3,6 @@
 //  ------                                                                 
 //                                                                         
 //  This is the public interface to the Hoshi parser generator and parser. 
-//  This is the only header file needed to use Hoshi.                      
 //                                                                         
 //  We've used the pimpl idiom to hide most of the implementation details  
 //  in other files.                                                        
@@ -153,17 +152,17 @@ bool Parser::is_source_failed()
 }
 
 //
-//  set_ast_kind_map                                                      
-//  ----------------                                                      
+//  set_kind_map                                                      
+//  ------------                                                      
 //                                                                        
 //  For the bootstrap runs we need to create a skeletal parser which only 
 //  contains the Ast kind map. We want to be able to see ast kinds, but   
 //  we're going to generate the Ast outside the Hoshi Parser.             
 //
 
-void Parser::set_ast_kind_map(const std::map<std::string, int>& ast_kind_map)
+void Parser::set_kind_map(const std::map<std::string, int>& kind_map)
 {
-    impl->set_ast_kind_map(ast_kind_map);
+    impl->set_kind_map(kind_map);
 }
 
 //
@@ -177,10 +176,10 @@ void Parser::set_ast_kind_map(const std::map<std::string, int>& ast_kind_map)
 
 void Parser::generate(Ast* ast,
                       const Source& src,
-                      const map<string, int>& ast_kind_map,
+                      const map<string, int>& kind_map,
                       const int64_t debug_flags)   
 {
-    impl->generate(ast, src, ast_kind_map, debug_flags);    
+    impl->generate(ast, src, kind_map, debug_flags);    
 }
 
 //
@@ -205,10 +204,10 @@ Ast* Parser::generate_ast(const Source& src,
 //
 
 void Parser::generate(const Source& src,
-                      const map<string, int>& ast_kind_map,
+                      const map<string, int>& kind_map,
                       const int64_t debug_flags)   
 {
-    impl->generate(src, ast_kind_map, debug_flags);    
+    impl->generate(src, kind_map, debug_flags);    
 }
 
 //
@@ -224,16 +223,28 @@ void Parser::parse(const Source& src, const int64_t debug_flags)
 }
 
 //
-//  get_ast_kind_map                                                     
-//  ----------------                                                     
+//  get_kind_map                                                     
+//  ------------                                                     
 //                                                                       
-//  Get the current ast_kind_map. The client can use this to find out if 
+//  Get the current kind_map. The client can use this to find out if 
 //  he forgot to define any important kind strings.                      
 //
 
-map<string, int> Parser::get_ast_kind_map() const
+map<string, int> Parser::get_kind_map() const
 {
-    return impl->get_ast_kind_map();
+    return impl->get_kind_map();
+}
+
+//
+//  get_encoded_kind_map
+//  --------------------                                        
+//                                                 
+//  Return the kind_map encoded as a string.
+//
+
+string Parser::get_encoded_kind_map() const
+{
+    return impl->get_encoded_kind_map();
 }
 
 //
@@ -243,7 +254,7 @@ map<string, int> Parser::get_ast_kind_map() const
 //  Return the result Ast from a successful parse. 
 //
 
-Ast* Parser::get_ast()
+Ast* Parser::get_ast() const
 {
     return impl->get_ast();
 }
@@ -454,9 +465,9 @@ string Parser::encode() const
 //
 
 void Parser::decode(const string& str,
-                    const map<string, int>& ast_kind_map)
+                    const map<string, int>& kind_map)
 {
-    impl->decode(str, ast_kind_map);
+    impl->decode(str, kind_map);
 }
 
 } // namespace hoshi

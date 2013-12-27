@@ -354,6 +354,158 @@ public:
     }
 
     //
+    //  parser_get_encoded_kind_map
+    //  ---------------------------
+    //  
+    //  Return the kind map encoded as a string. We use this method to pass the
+    //  kind map to the caller to facilitate interlanguage calls.
+    //
+
+    static void parser_get_encoded_kind_map(ptrdiff_t this_handle, 
+                                            ExceptionHandler exception_handler, 
+                                            StringResult string_result)
+    {
+        
+        try
+        {
+            string_result(parser_handle_out(this_handle)->get_encoded_kind_map());
+        }
+        catch (std::exception& e)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, e.what());
+        }
+        catch (...)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
+        }
+        
+    }
+
+    //
+    //  parser_get_kind
+    //  ---------------
+    //  
+    //  Get the integer code for a given string.
+    //
+
+    static int parser_get_kind(ptrdiff_t this_handle, 
+                               ExceptionHandler exception_handler, 
+                               const std::string& kind_string)
+    {
+        
+        try
+        {
+            return parser_handle_out(this_handle)->get_kind(kind_string);
+        }
+        catch (std::exception& e)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, e.what());
+        }
+        catch (...)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
+        }
+        
+        return 0;
+        
+    }
+
+    //
+    //  parser_get_kind_force
+    //  ---------------------
+    //  
+    //  Get the integer code for a given string. If it doesn't exist then
+    //  install it.
+    //
+
+    static int parser_get_kind_force(ptrdiff_t this_handle, 
+                                     ExceptionHandler exception_handler, 
+                                     const std::string& kind_string)
+    {
+        
+        try
+        {
+            return parser_handle_out(this_handle)->get_kind_force(kind_string);
+        }
+        catch (std::exception& e)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, e.what());
+        }
+        catch (...)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
+        }
+        
+        return 0;
+        
+    }
+
+    //
+    //  parser_get_kind_string
+    //  ----------------------
+    //  
+    //  Get the text name for a numeric kind code.
+    //
+
+    static void parser_get_kind_string(ptrdiff_t this_handle, 
+                                       ExceptionHandler exception_handler, 
+                                       StringResult string_result, 
+                                       int kind)
+    {
+        
+        try
+        {
+            string_result(parser_handle_out(this_handle)->get_kind_string(kind));
+        }
+        catch (std::exception& e)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, e.what());
+        }
+        catch (...)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
+        }
+        
+    }
+
+    //
+    //  parser_add_error
+    //  ----------------
+    //  
+    //  Add another error to the message list. This is provided so that clients
+    //  can use the parser message handler for all errors, not just parsing
+    //  errors.
+    //
+
+    static void parser_add_error(ptrdiff_t this_handle, 
+                                 ExceptionHandler exception_handler, 
+                                 ErrorType error_type, 
+                                 int64_t location, 
+                                 const std::string& short_message, 
+                                 const std::string& long_message)
+    {
+        
+        try
+        {
+            
+            parser_handle_out(this_handle)->add_error(error_type, 
+                                                      location, 
+                                                      short_message, 
+                                                      long_message);
+            
+        }
+        catch (std::exception& e)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, e.what());
+        }
+        catch (...)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
+        }
+        
+    }
+
+    //
     //  parser_get_error_count
     //  ----------------------
     //  
@@ -406,41 +558,6 @@ public:
         }
         
         return 0;
-        
-    }
-
-    //
-    //  parser_add_error
-    //  ----------------
-    //  
-    //  Add another error to the message list. This is provided so that clients
-    //  can use the parser message handler for all errors, not just parsing
-    //  errors.
-    //
-
-    static void parser_add_error(ptrdiff_t this_handle, 
-                                 ExceptionHandler exception_handler, 
-                                 ErrorType error_type, 
-                                 int64_t location, 
-                                 const std::string& short_message, 
-                                 const std::string& long_message)
-    {
-        
-        try
-        {
-            parser_handle_out(this_handle)->add_error(error_type, 
-                                                      location, 
-                                                      short_message, 
-                                                      long_message);
-        }
-        catch (std::exception& e)
-        {
-            exception_handler(ExceptionType::ExceptionUnknown, e.what());
-        }
-        catch (...)
-        {
-            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
-        }
         
     }
 
@@ -539,7 +656,35 @@ public:
 
     static void parser_decode(ptrdiff_t this_handle, 
                               ExceptionHandler exception_handler, 
-                              const std::string& str)
+                              const std::string& str, 
+                              std::map<std::string, int>& kind_map)
+    {
+        
+        try
+        {
+            parser_handle_out(this_handle)->decode(str, kind_map);
+        }
+        catch (std::exception& e)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, e.what());
+        }
+        catch (...)
+        {
+            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
+        }
+        
+    }
+
+    //
+    //  parser_decode_1
+    //  ---------------
+    //  
+    //  Decode a previously created string into a parser
+    //
+
+    static void parser_decode_1(ptrdiff_t this_handle, 
+                                ExceptionHandler exception_handler, 
+                                const std::string& str)
     {
         
         try

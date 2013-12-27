@@ -30,13 +30,13 @@ int main()
     {
 
         parser.generate(SourceFile("Pascal.G"), map<string, int>(),
-                        static_cast<DebugFlags>(0)
-                        | DebugFlags::DebugProgress
+                        static_cast<DebugType>(0)
+                        | DebugType::DebugProgress
                        );
 
         parser.parse(SourceFile("Pascal.S"), 
-                     static_cast<DebugFlags>(0)
-                     | DebugFlags::DebugProgress
+                     static_cast<DebugType>(0)
+                     | DebugType::DebugProgress
                     );
 
     }

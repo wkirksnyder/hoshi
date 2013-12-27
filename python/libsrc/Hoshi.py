@@ -3,7 +3,7 @@
 #  -----                                                                   
 #                                                                          
 #  Hoshi is a parser generator written in C++. This file is a wrapper that 
-#  uses ctypes to access Hoshi in a dynamic library.                       
+#  uses ctypes to access Hoshi in a native library.                       
 #
 
 from ctypes import *
@@ -21,7 +21,7 @@ HOSHI = cdll.hoshi
 
 #
 #  Set the type attributes for the exported functions we need in the 
-#  dynamic library.                                                  
+#  native library.                                                  
 #
 
 HOSHI.py_get_exception_type.restype = c_int64
@@ -47,15 +47,16 @@ HOSHI.py_parser_is_source_failed.argtypes = [c_int64, c_void_p]
 HOSHI.py_parser_generate_1.argtypes = [c_int64, c_void_p, c_char_p]
 HOSHI.py_parser_parse.argtypes = [c_int64, c_void_p, c_char_p]
 HOSHI.py_parser_get_encoded_ast.argtypes = [c_int64, c_void_p, c_void_p]
-HOSHI.py_parser_get_error_count.restype = c_int
-HOSHI.py_parser_get_error_count.argtypes = [c_int64, c_void_p]
-HOSHI.py_parser_get_warning_count.restype = c_int
-HOSHI.py_parser_get_warning_count.argtypes = [c_int64, c_void_p]
+HOSHI.py_parser_get_encoded_kind_map.argtypes = [c_int64, c_void_p, c_void_p]
 HOSHI.py_parser_add_error.argtypes = [c_int64, 
                                       c_void_p, 
                                       c_int, 
                                       c_int64, 
                                       c_char_p]
+HOSHI.py_parser_get_error_count.restype = c_int
+HOSHI.py_parser_get_error_count.argtypes = [c_int64, c_void_p]
+HOSHI.py_parser_get_warning_count.restype = c_int
+HOSHI.py_parser_get_warning_count.argtypes = [c_int64, c_void_p]
 HOSHI.py_parser_get_encoded_error_messages.argtypes = [c_int64, 
                                                        c_void_p, 
                                                        c_void_p]
@@ -64,7 +65,7 @@ HOSHI.py_parser_get_source_list.argtypes = [c_int64,
                                             c_void_p, 
                                             c_char_p]
 HOSHI.py_parser_encode.argtypes = [c_int64, c_void_p, c_void_p]
-HOSHI.py_parser_decode.argtypes = [c_int64, c_void_p, c_char_p]
+HOSHI.py_parser_decode_1.argtypes = [c_int64, c_void_p, c_char_p]
 
 #
 #  ExceptionType
@@ -243,6 +244,7 @@ def check_exceptions(exception_ptr):
         buf = create_string_buffer(b'', length)
         HOSHI.py_get_exception_string(byref(exception_ptr), buf)
         what = str(buf.value.decode("utf-8"))
+
     except:
         raise UnknownError("Unknown exception")
 
@@ -253,6 +255,121 @@ def check_exceptions(exception_ptr):
     elif exception_type == ExceptionType.ExceptionUnknown:
         raise UnknownError(what)
     
+#
+#  Decoders                                                              
+#  --------                                                              
+#                                                                        
+#  Data handled in this module is computed in a native code library.     
+#  Sometimes it's better to leave it there and access it on demand, and  
+#  sometimes it's better to marshall it in the library and bring it here 
+#  in one call. These functions perform primitive un-marshalling         
+#  operations that make it easier to un-marshall larger structures.      
+#
+
+def decode_int(marshalled, tail_ptr):
+
+    buffer = ""
+
+    while True:
+        if marshalled[tail_ptr] == '`':
+            tail_ptr += 1
+        elif marshalled[tail_ptr] == '|':
+            tail_ptr += 1
+            break
+        buffer += marshalled[tail_ptr]
+        tail_ptr += 1
+
+    return (int(buffer), tail_ptr)
+
+def decode_string(marshalled, tail_ptr):
+
+    buffer = ""
+
+    while True:
+        if marshalled[tail_ptr] == '`':
+            tail_ptr += 1
+        elif marshalled[tail_ptr] == '|':
+            tail_ptr += 1
+            break
+        buffer += marshalled[tail_ptr]
+        tail_ptr += 1
+
+    return (buffer, tail_ptr)
+
+def decode_kind_map(marshalled, tail_ptr):
+
+    (size, tail_ptr) = decode_int(marshalled, tail_ptr)
+
+    kind_map = dict()
+    for i in range(0, size):
+        (str, tail_ptr) = decode_string(marshalled, tail_ptr)
+        (num, tail_ptr) = decode_int(marshalled, tail_ptr)
+        kind_map[num] = str
+
+    return (kind_map, tail_ptr)
+
+def decode_ast(kind_map, marshalled, tail_ptr):
+
+    (num_children, tail_ptr) = decode_int(marshalled, tail_ptr)
+    if num_children < 0:
+        return (None, tail_ptr)
+
+    root = Ast()
+
+    (kind, tail_ptr) = decode_int(marshalled, tail_ptr)
+    if kind in kind_map:
+        root.set_kind(kind_map[kind])
+    else:
+        root.set_kind("Unknown")
+
+    (location, tail_ptr) = decode_int(marshalled, tail_ptr)
+    root.set_location(location)
+
+    (lexeme, tail_ptr) = decode_string(marshalled, tail_ptr)
+    root.set_lexeme(lexeme)
+
+    for i in range(0, num_children):
+        (ast, tail_ptr) = decode_ast(kind_map, marshalled, tail_ptr)    
+        root.set_child(i, ast)
+
+    return (root, tail_ptr)
+
+def decode_error_message(marshalled, tail_ptr):
+
+    message = ErrorMessage()
+
+    (message_type, tail_ptr) = decode_int(marshalled, tail_ptr)
+    message.set_message_type(message_type)
+
+    (tag, tail_ptr) = decode_string(marshalled, tail_ptr)
+    message.set_tag(tag)
+
+    (severity, tail_ptr) = decode_int(marshalled, tail_ptr)
+    message.set_severity(severity)
+
+    (location, tail_ptr) = decode_int(marshalled, tail_ptr)
+    message.set_location(location)
+
+    (line_num, tail_ptr) = decode_int(marshalled, tail_ptr)
+    message.set_line_num(line_num)
+
+    (column_num, tail_ptr) = decode_int(marshalled, tail_ptr)
+    message.set_column_num(column_num)
+
+    (source_line, tail_ptr) = decode_string(marshalled, tail_ptr)
+    message.set_source_line(source_line)
+
+    (short_message, tail_ptr) = decode_string(marshalled, tail_ptr)
+    message.set_short_message(short_message)
+
+    (long_message, tail_ptr) = decode_string(marshalled, tail_ptr)
+    message.set_long_message(long_message)
+
+    (string, tail_ptr) = decode_string(marshalled, tail_ptr)
+    message.set_string(string)
+
+    return message
+
 #
 #  Parser                         
 #  ------                         
@@ -411,6 +528,26 @@ class Parser:
         check_exceptions(exception_ptr)
         
     #
+    #  get_ast
+    #  -------
+    #  
+    #  Return the Ast.
+    #
+    
+    def get_ast(self):
+
+        try:
+            marshalled = self.get_encoded_ast()
+        except Exception as e:
+            print(str(e))
+            return None
+
+        (kind_map, tail_ptr) = decode_kind_map(marshalled, 0)
+        (ast, tail_ptr) = decode_ast(kind_map, marshalled, tail_ptr)
+
+        return ast
+
+    #
     #  get_encoded_ast
     #  ---------------
     #  
@@ -430,6 +567,33 @@ class Parser:
         check_exceptions(exception_ptr)
         
         return string_result_in(result_ptr)
+        
+    #
+    #  add_error
+    #  ---------
+    #  
+    #  Add another error to the message list. This is provided so that clients
+    #  can use the parser message handler for all errors, not just parsing
+    #  errors.
+    #
+
+    def add_error(self, error_type, location, short_message, *args):
+        
+        if len(args) > 0:
+            long_message = args[0]
+        else:
+            long_message = 0
+        
+        exception_ptr = c_void_p(None)
+        
+        HOSHI.py_parser_add_error(parser_handle_out(self.this_handle), 
+                                  byref(exception_ptr), 
+                                  error_type_out(error_type), 
+                                  int64_out(location), 
+                                  string_out(short_message), 
+                                  string_out(long_message))
+        
+        check_exceptions(exception_ptr)
         
     #
     #  get_error_count
@@ -468,32 +632,30 @@ class Parser:
         return result
         
     #
-    #  add_error
-    #  ---------
+    #  get_error_messages
+    #  ------------------
     #  
-    #  Add another error to the message list. This is provided so that clients
-    #  can use the parser message handler for all errors, not just parsing
-    #  errors.
+    #  Return the error messages.
     #
+    
+    def get_error_messages(self):
 
-    def add_error(self, error_type, location, short_message, *args):
-        
-        if len(args) > 0:
-            long_message = args[0]
-        else:
-            long_message = ""
-        
-        exception_ptr = c_void_p(None)
-        
-        HOSHI.py_parser_add_error(parser_handle_out(self.this_handle), 
-                                  byref(exception_ptr), 
-                                  error_type_out(error_type), 
-                                  int64_out(location), 
-                                  string_out(short_message), 
-                                  string_out(long_message))
-        
-        check_exceptions(exception_ptr)
-        
+        try:
+            marshalled = self.get_encoded_error_messages()
+        except Exception as e:
+            print(str(e))
+            return []
+
+        (length, tail_ptr) = decode_int(marshalled, 0)
+        messages = []
+
+        while length > 0:
+            (message, tail_ptr) = decode_error_message(marshalled, tail_ptr)
+            messages.append(message)
+            length -= 1
+
+        return messages
+
     #
     #  get_encoded_error_messages
     #  --------------------------
@@ -573,152 +735,12 @@ class Parser:
         
         exception_ptr = c_void_p(None)
         
-        HOSHI.py_parser_decode(parser_handle_out(self.this_handle), 
-                               byref(exception_ptr), 
-                               string_out(str))
+        HOSHI.py_parser_decode_1(parser_handle_out(self.this_handle), 
+                                 byref(exception_ptr), 
+                                 string_out(str))
         
         check_exceptions(exception_ptr)
         
-    #
-    #  get_ast                                                            
-    #  -------                                                            
-    #                                                                     
-    #  Fetch a marshalled form of the Ast from the native code module and 
-    #  un-marshall it into a tree.                                        
-    #
-
-    def get_ast(self):
-
-        try:
-            marshalled = self.get_encoded_ast()
-        except Exception as e:
-            print(str(e))
-            return None
-
-        (kind_map, tail_ptr) = decode_kind_map(marshalled, 0)
-        (ast, tail_ptr) = decode_ast(kind_map, marshalled, tail_ptr)
-
-        return ast
-
-    #
-    #  get_error_messages                                                 
-    #  ------------------                                                 
-    #                                                                     
-    #  Fetch a marshalled form of the error messages from the native code 
-    #  module and un-marshall it into a list.                             
-    #
-
-    def get_error_messages(self):
-
-        try:
-            marshalled = self.get_encoded_error_messages()
-        except Exception as e:
-            print(str(e))
-            return []
-
-        (length, tail_ptr) = decode_int(marshalled, 0)
-        messages = []
-
-        while length > 0:
-
-            message = ErrorMessage()
-
-            (message_type, tail_ptr) = decode_int(marshalled, tail_ptr)
-            message.set_message_type(message_type)
-
-            (tag, tail_ptr) = decode_string(marshalled, tail_ptr)
-            message.set_tag(tag)
-
-            (severity, tail_ptr) = decode_int(marshalled, tail_ptr)
-            message.set_severity(severity)
-
-            (location, tail_ptr) = decode_int(marshalled, tail_ptr)
-            message.set_location(location)
-
-            (line_num, tail_ptr) = decode_int(marshalled, tail_ptr)
-            message.set_line_num(line_num)
-
-            (column_num, tail_ptr) = decode_int(marshalled, tail_ptr)
-            message.set_column_num(column_num)
-
-            (source_line, tail_ptr) = decode_string(marshalled, tail_ptr)
-            message.set_source_line(source_line)
-
-            (short_message, tail_ptr) = decode_string(marshalled, tail_ptr)
-            message.set_short_message(short_message)
-
-            (long_message, tail_ptr) = decode_string(marshalled, tail_ptr)
-            message.set_long_message(long_message)
-
-            (string, tail_ptr) = decode_string(marshalled, tail_ptr)
-            message.set_string(string)
-
-            messages.append(message)
-            length -= 1
-
-        return messages
-
-#
-#  Decoders                                                              
-#  --------                                                              
-#                                                                        
-#  Data handled in this module is computed in a native code library.     
-#  Sometimes it's better to leave it there and access it on demand, and  
-#  sometimes it's better to marshall it in the library and bring it here 
-#  in one call. These functions perform primitive un-marshalling         
-#  operations that make it easier to un-marshall larger structures.      
-#
-
-def decode_int(marshalled, tail_ptr):
-
-    next_ptr = tail_ptr
-    while marshalled[next_ptr] != "|":
-        next_ptr += 1
-    return (int(marshalled[tail_ptr:next_ptr]), next_ptr + 1)
-
-def decode_string(marshalled, tail_ptr):
-
-    (length, tail_ptr) = decode_int(marshalled, tail_ptr)
-    return (marshalled[tail_ptr:tail_ptr + length], tail_ptr + length + 1)
-
-def decode_kind_map(marshalled, tail_ptr):
-
-    (size, tail_ptr) = decode_int(marshalled, tail_ptr)
-
-    kind_map = dict()
-    for i in range(0, size):
-        (str, tail_ptr) = decode_string(marshalled, tail_ptr)
-        (num, tail_ptr) = decode_int(marshalled, tail_ptr)
-        kind_map[num] = str
-
-    return (kind_map, tail_ptr);
-
-def decode_ast(kind_map, marshalled, tail_ptr):
-
-    if tail_ptr >= len(marshalled):
-        return None
-
-    root = Ast()
-
-    (kind, tail_ptr) = decode_int(marshalled, tail_ptr)
-    if kind in kind_map:
-        root.set_kind(kind_map[kind])
-    else:
-        root.set_kind("Unknown")
-
-    (lexeme, tail_ptr) = decode_string(marshalled, tail_ptr)
-    root.set_lexeme(lexeme)
-
-    (location, tail_ptr) = decode_int(marshalled, tail_ptr)
-    root.set_location(location)
-
-    (num_children, tail_ptr) = decode_int(marshalled, tail_ptr)
-    for i in range(0, num_children):
-        (ast, tail_ptr) = decode_ast(kind_map, marshalled, tail_ptr)    
-        root.set_child(i, ast)
-
-    return (root, tail_ptr);
-
 #
 #  Ast (Abstract Syntax Tree)                                              
 #  --------------------------                                              

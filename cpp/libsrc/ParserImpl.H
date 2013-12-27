@@ -106,18 +106,18 @@ public:
     //  Result generators.
     //
 
-    void set_ast_kind_map(const std::map<std::string, int>& ast_kind_map);
+    void set_kind_map(const std::map<std::string, int>& kind_map);
 
     void generate(Ast* ast,
                   const Source& src,
-                  const std::map<std::string, int>& ast_kind_map = kind_map_missing,
+                  const std::map<std::string, int>& kind_map = kind_map_missing,
                   const int64_t debug_flags = 0);  
 
     Ast* generate_ast(const Source& src,
                       const int64_t debug_flags = 0);
 
     void generate(const Source& src,
-                  const std::map<std::string, int>& ast_kind_map = kind_map_missing,
+                  const std::map<std::string, int>& kind_map = kind_map_missing,
                   const int64_t debug_flags = 0);  
 
     void parse(const Source& src, const int64_t debug_flags = 0);
@@ -126,7 +126,8 @@ public:
     //  Result accessors and error message utilities. 
     //
 
-    std::map<std::string, int> get_ast_kind_map() const;
+    std::map<std::string, int> get_kind_map() const;
+    std::string get_encoded_kind_map() const;
 
     Ast* get_ast() const;
     std::string get_encoded_ast() const;
@@ -165,7 +166,7 @@ public:
     std::string encode() const;
 
     void decode(const std::string& str,
-                const std::map<std::string, int>& ast_kind_map = kind_map_missing);
+                const std::map<std::string, int>& kind_map = kind_map_missing);
 
     //
     //  Log utilities. 
@@ -205,9 +206,11 @@ private:
     void get_source_string(Ast* root, std::string& source, int64_t& adjustment);
     void expand_subtrees(Ast* root, bool& any_changes, int64_t debug_flags);
 
-    void encode_int64(const int64_t i, std::ostream& os) const;
-    void encode_string(const std::string& s, std::ostream& os) const;
-    void encode_ast(const Ast* a, std::ostream& os) const;
+    static void encode_long(std::ostream& os, int64_t value);
+    static int64_t decode_long(std::istream& is);
+    static void encode_string(std::ostream& os, const std::string& value);
+    static std::string decode_string(std::istream& is);
+    static void encode_ast(std::ostream& os, const Ast* ast);
 
 };
 
