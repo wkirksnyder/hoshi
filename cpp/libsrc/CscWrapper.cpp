@@ -1,9 +1,9 @@
 //
-//  JavaWrapper                                                           
-//  -----------                                                           
+//  CscWrapper                                                           
+//  ----------                                                           
 //                                                                        
-//  This is glue code to use Hoshi from Java. Java must call C and        
-//  each function we wish to access in Java must be here. From this file  
+//  This is glue code to use Hoshi from C#. C# must call C and        
+//  each function we wish to access in C# must be here. From this file  
 //  we call a language-independent static C++ class (ParserStatic) with   
 //  the method we want, and that will in turn make the call into C++.     
 //                                                                        
@@ -11,13 +11,17 @@
 //  the cost should be negligible.                                        
 //
 
+#ifndef _WIN64
+int dummy_public_symbol_so_linkers_accept_this_file = 0;
+#else
+
 #include <codecvt>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
-#include <jni.h>
+#include <Windows.h>
 #include "Parser.H"
 #include "ParserStatic.H"
 
@@ -25,16 +29,69 @@ using namespace std;
 using namespace hoshi;
 
 //
-//  Java Symbols                                                     
-//  ------------                                                     
-//                                                                   
-//  These are java symbols we need to access here. We locate them on 
-//  initialization.                                                  
+//  .NET service handlers                                                
+//  ---------------------                                                
+//                                                                       
+//  We need some services, primarily creating exceptions, which must be  
+//  handled by asynchronous callbacks. I'm not sure this is the best way 
+//  to program this, but what we're going to do is register callback     
+//  handlers for each of these services here and call them as needed.    
+//                                                                       
+//  There is a similar concept in JNI, but there we initiate the process 
+//  from the C++ side. In PInvoke we have to initiate it in .NET.        
 //
 
-static jclass global_GrammarError = nullptr;
-static jclass global_SourceError = nullptr;
-static jclass global_UnknownError = nullptr;
+//
+//  GrammarError.
+//
+
+typedef void (*GrammarErrorCreator)(LPVOID, LPWSTR, INT32);
+static GrammarErrorCreator grammar_error_creator = nullptr;
+
+extern "C" _declspec(dllexport) 
+void csc_Services_register_grammar_error_creator(GrammarErrorCreator creator)
+{
+    grammar_error_creator = creator;
+}
+
+//
+//  SourceError.
+//
+
+typedef void (*SourceErrorCreator)(LPVOID, LPWSTR, INT32);
+static SourceErrorCreator source_error_creator = nullptr;
+
+extern "C" _declspec(dllexport) 
+void csc_Services_register_source_error_creator(SourceErrorCreator creator)
+{
+    source_error_creator = creator;
+}
+
+//
+//  UnknownError.
+//
+
+typedef void (*UnknownErrorCreator)(LPVOID, LPWSTR, INT32);
+static UnknownErrorCreator unknown_error_creator = nullptr;
+
+extern "C" _declspec(dllexport) 
+void csc_Services_register_unknown_error_creator(UnknownErrorCreator creator)
+{
+    unknown_error_creator = creator;
+}
+
+//
+//  String.
+//
+
+typedef void (*StringCreator)(LPVOID, LPWSTR, INT32);
+static StringCreator string_creator = nullptr;
+
+extern "C" _declspec(dllexport) 
+void csc_Services_register_string_creator(StringCreator creator)
+{
+    string_creator = creator;
+}
 
 //
 //  Primitive String Encoders and Decoders                            
@@ -130,7 +187,7 @@ static string decode_string(istream& is)
 //                                                                      
 //  These are places to stash results too big to return as primitives.  
 //  When the eventual called function wants to return these we save the 
-//  output here and allow the java client to query them.                
+//  output here and allow the C# client to query them.                
 //
 
 struct StringResultStruct
@@ -150,7 +207,7 @@ struct ExceptionStruct
 //                                                                        
 //  We need to plant callbacks in the ParserStatic class to handle string 
 //  return values. This is essentially a currying function to create such 
-//  a thing from a location provided in java.                           
+//  a thing from a location provided in C#.                           
 //
 
 static StringResult string_result_out(void** result_handle)
@@ -171,7 +228,7 @@ static StringResult string_result_out(void** result_handle)
 //                                                                        
 //  We need to plant callbacks in the ParserStatic class to handle thrown 
 //  exceptions. This is essentially a currying function to create such a  
-//  thing from a location provided in java.                             
+//  thing from a location provided in C#.                             
 //
 
 static ExceptionHandler exception_handler_out(void** exception_handle)
@@ -192,29 +249,31 @@ static ExceptionHandler exception_handler_out(void** exception_handle)
 //  ----------------                                                    
 //                                                                      
 //  Take the string result from Hoshi, convert from UTF-8 to UTF-16 and 
-//  return it to java.                                                  
+//  return it to C#.                                                  
 //
 
-static jstring string_result_in(JNIEnv* env, void* result_handle)
+static void string_result_in(LPVOID result_handle, void* result_vptr)
 {
 
     static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> myconv;
 
-    StringResultStruct* result_ptr = 
-        reinterpret_cast<StringResultStruct*>(result_handle);
-
-    u16string str_in = myconv.from_bytes(result_ptr->result_string);
-
-    jstring java_string = env->NewString(static_cast<const jchar*>(str_in.data()),
-                                         str_in.length());
-
-    if (java_string == nullptr)
+    if (result_vptr == nullptr)
     {
-        cerr << "Fatal error: JVM cannot create new string" << endl;
-        exit(1);
+        return;
+    }
+    
+    StringResultStruct* result_ptr = 
+        reinterpret_cast<StringResultStruct*>(result_vptr);
+
+    u16string str_utf16 = myconv.from_bytes(result_ptr->result_string);
+    wstring str_wstr(str_utf16.length(), static_cast<wchar_t>(' '));
+
+    for (int i = 0; i < str_utf16.length(); i++)
+    {
+        str_wstr[i] = static_cast<wchar_t>(str_utf16[i]);
     }
 
-    return java_string;
+    (*string_creator)(result_handle, &(str_wstr.front()), str_wstr.size());
 
 }
 
@@ -222,37 +281,44 @@ static jstring string_result_in(JNIEnv* env, void* result_handle)
 //  check_exceptions                                                     
 //  ----------------                                                     
 //                                                                       
-//  See if the called function found an exception. If so plant it in the 
-//  jvm.                                                                 
+//  See if the called function found an exception. If so return it to 
+//  clr.
 //
 
-static void check_exceptions(JNIEnv* env, void* exception_handle)
+static void check_exceptions(LPVOID exception_handle, void* exception_vptr)
 {
 
-    if (exception_handle == nullptr)
+    static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> myconv;
+
+    if (exception_vptr == nullptr)
     {
         return;
     }
 
     ExceptionStruct* exception_ptr = 
-        reinterpret_cast<ExceptionStruct*>(exception_handle);
+        reinterpret_cast<ExceptionStruct*>(exception_vptr);
+
+    u16string str_utf16 = myconv.from_bytes(exception_ptr->exception_string);
+    wstring str_wstr(str_utf16.length(), static_cast<wchar_t>(' '));
+
+    for (int i = 0; i < str_utf16.length(); i++)
+    {
+        str_wstr[i] = static_cast<wchar_t>(str_utf16[i]);
+    }
 
     switch (exception_ptr->exception_type)
     {
 
-        case ExceptionType::ExceptionNull:
-            return;
-
         case ExceptionType::ExceptionGrammar:
-            env->ThrowNew(global_GrammarError, exception_ptr->exception_string.c_str());
+            (*grammar_error_creator)(exception_handle, &(str_wstr.front()), str_wstr.size());
             return;
 
         case ExceptionType::ExceptionSource:
-            env->ThrowNew(global_SourceError, exception_ptr->exception_string.c_str());
+            (*source_error_creator)(exception_handle, &(str_wstr.front()), str_wstr.size());
             return;
 
         case ExceptionType::ExceptionUnknown:
-            env->ThrowNew(global_UnknownError, exception_ptr->exception_string.c_str());
+            (*unknown_error_creator)(exception_handle, &(str_wstr.front()), str_wstr.size());
             return;
 
     }
@@ -263,33 +329,27 @@ static void check_exceptions(JNIEnv* env, void* exception_handle)
 //  string_out                                                            
 //  ----------                                                            
 //                                                                        
-//  Convert a jstring into a C++ string to send to ParserStatic. Java's   
+//  Convert an LPWSTR into a C++ string to send to ParserStatic. C#'s   
 //  String representation is UTF-16. Hoshi uses UTF-8. This function does 
 //  the conversion.                                                       
 //
 
-static string string_out(JNIEnv* env, jstring str_in)
+static string string_out(LPWSTR str_in)
 {
 
     static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> myconv;
 
-    jboolean is_copy;
-    const jchar *sptr = env->GetStringCritical(str_in, &is_copy);
-    
-    int length = env->GetStringLength(str_in);
-    u16string str_out(length, ' ');
-    
-    if (sptr == nullptr)
+    int length = 0;
+    for (auto p = str_in; *p != 0; p++)
     {
-        cerr << "Fatal error: JVM memory exhausted!" << endl;
-        exit(1);
+        length++;
     }
+
+    u16string str_out(length, ' ');
     
     for (int i = 0;
          i < length;
-         str_out[i] = static_cast<char16_t>(*(sptr + i)), i++);
-    
-    env->ReleaseStringCritical(str_in, sptr);
+         str_out[i] = static_cast<char16_t>(str_in[i++]));
 
     try
     {
@@ -297,7 +357,7 @@ static string string_out(JNIEnv* env, jstring str_in)
     }
     catch (...)
     {
-        cerr << "Fatal error: Java string is not UTF-16!" << endl;
+        cerr << "Fatal error: CLR string is not UTF-16!" << endl;
         exit(1);
     }
 
@@ -310,11 +370,11 @@ static string string_out(JNIEnv* env, jstring str_in)
 //  Convert a marshalled kind_map into C++ form. 
 //
 
-static map<string, int> kind_map_out(JNIEnv* env, jstring str_in)
+static map<string, int> kind_map_out(LPWSTR str_in)
 {
     
     map<string, int> result;
-    istringstream is(string_out(env, str_in));
+    istringstream is(string_out(str_in));
 
     int size = decode_long(is);
 
@@ -330,73 +390,8 @@ static map<string, int> kind_map_out(JNIEnv* env, jstring str_in)
 }
 
 //
-//  Java_hoshi_Initializer_initialize_1jni
-//  --------------------------------------
-//  
-//  Initialize anything required by JNI. This is called immediately after
-//  loading the dynamic library.
-//
-
-extern "C" JNIEXPORT void JNICALL
-Java_hoshi_Initializer_initialize_1jni(JNIEnv* env, jclass clazz)
-{
-
-    jclass cls = env->FindClass("hoshi/GrammarError");
-    if (cls == nullptr)
-    {
-        cerr << "Fatal error: Cannot find GrammarError in JVM!" << endl;
-        exit(1);
-    }
-    
-    global_GrammarError = static_cast<jclass>(env->NewGlobalRef(cls));
-    if (global_GrammarError == nullptr)
-    {
-        cerr << "Fatal error: JVM memory exhausted!" << endl;
-        exit(1);
-    }
-    
-    env->DeleteLocalRef(cls);
-    cls = nullptr;
-    
-    cls = env->FindClass("hoshi/SourceError");
-    if (cls == nullptr)
-    {
-        cerr << "Fatal error: Cannot find SourceError in JVM!" << endl;
-        exit(1);
-    }
-    
-    global_SourceError = static_cast<jclass>(env->NewGlobalRef(cls));
-    if (global_SourceError == nullptr)
-    {
-        cerr << "Fatal error: JVM memory exhausted!" << endl;
-        exit(1);
-    }
-    
-    env->DeleteLocalRef(cls);
-    cls = nullptr;
-    
-    cls = env->FindClass("hoshi/UnknownError");
-    if (cls == nullptr)
-    {
-        cerr << "Fatal error: Cannot find UnknownError in JVM!" << endl;
-        exit(1);
-    }
-    
-    global_UnknownError = static_cast<jclass>(env->NewGlobalRef(cls));
-    if (global_UnknownError == nullptr)
-    {
-        cerr << "Fatal error: JVM memory exhausted!" << endl;
-        exit(1);
-    }
-    
-    env->DeleteLocalRef(cls);
-    cls = nullptr;
-    
-}
-
-//
-//  Java_hoshi_Parser_new_1parser
-//  -----------------------------
+//  csc_Parser_new_parser
+//  ---------------------
 //  
 //  Construct a new Parser and return a pointer as a pointer-sized integer.
 //  We're pretty open to memory leaks here when called from garbage-collected
@@ -405,55 +400,50 @@ Java_hoshi_Initializer_initialize_1jni(JNIEnv* env, jclass clazz)
 //  final client doesn't have to keep track of it.
 //
 
-extern "C" JNIEXPORT ptrdiff_t JNICALL
-Java_hoshi_Parser_new_1parser(JNIEnv* env, jclass clazz)
+extern "C" _declspec(dllexport)
+ptrdiff_t csc_Parser_new_parser()
 {
     return ParserStatic::parser_new_parser();
 }
 
 //
-//  Java_hoshi_Parser_clone_1parser
-//  -------------------------------
+//  csc_Parser_clone_parser
+//  -----------------------
 //  
 //  Copy new Parser and return a pointer as a pointer-sized integer. This is
 //  basically a call to the C++ copy constructor.
 //
 
-extern "C" JNIEXPORT ptrdiff_t JNICALL
-Java_hoshi_Parser_clone_1parser(JNIEnv* env, 
-                                jclass clazz, 
-                                ptrdiff_t parser_handle)
+extern "C" _declspec(dllexport)
+ptrdiff_t csc_Parser_clone_parser(ptrdiff_t parser_handle)
 {
     return ParserStatic::parser_clone_parser(parser_handle);
 }
 
 //
-//  Java_hoshi_Parser_delete_1parser
-//  --------------------------------
+//  csc_Parser_delete_parser
+//  ------------------------
 //  
 //  Delete a parser. This just calls C++ delete. For garbage collected languages
 //  this should probably be in the finalizer.
 //
 
-extern "C" JNIEXPORT void JNICALL
-Java_hoshi_Parser_delete_1parser(JNIEnv* env, 
-                                 jclass clazz, 
-                                 ptrdiff_t parser_handle)
+extern "C" _declspec(dllexport)
+void csc_Parser_delete_parser(ptrdiff_t parser_handle)
 {
     ParserStatic::parser_delete_parser(parser_handle);
 }
 
 //
-//  Java_hoshi_Parser_is_1grammar_1loaded
-//  -------------------------------------
+//  csc_Parser_is_grammar_loaded
+//  ----------------------------
 //  
 //  Check whether the parser has a grammer loaded.
 //
 
-extern "C" JNIEXPORT bool JNICALL
-Java_hoshi_Parser_is_1grammar_1loaded(JNIEnv* env, 
-                                      jclass clazz, 
-                                      ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+bool csc_Parser_is_grammar_loaded(ptrdiff_t this_handle, 
+                                  LPVOID exception_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -462,23 +452,22 @@ Java_hoshi_Parser_is_1grammar_1loaded(JNIEnv* env,
             this_handle, 
             exception_handler_out(&exception_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_is_1grammar_1failed
-//  -------------------------------------
+//  csc_Parser_is_grammar_failed
+//  ----------------------------
 //  
 //  Check whether the parser has a failed grammar.
 //
 
-extern "C" JNIEXPORT bool JNICALL
-Java_hoshi_Parser_is_1grammar_1failed(JNIEnv* env, 
-                                      jclass clazz, 
-                                      ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+bool csc_Parser_is_grammar_failed(ptrdiff_t this_handle, 
+                                  LPVOID exception_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -487,23 +476,22 @@ Java_hoshi_Parser_is_1grammar_1failed(JNIEnv* env,
             this_handle, 
             exception_handler_out(&exception_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_is_1source_1loaded
-//  ------------------------------------
+//  csc_Parser_is_source_loaded
+//  ---------------------------
 //  
 //  Check whether the parser has a source loaded.
 //
 
-extern "C" JNIEXPORT bool JNICALL
-Java_hoshi_Parser_is_1source_1loaded(JNIEnv* env, 
-                                     jclass clazz, 
-                                     ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+bool csc_Parser_is_source_loaded(ptrdiff_t this_handle, 
+                                 LPVOID exception_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -512,23 +500,22 @@ Java_hoshi_Parser_is_1source_1loaded(JNIEnv* env,
             this_handle, 
             exception_handler_out(&exception_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_is_1source_1failed
-//  ------------------------------------
+//  csc_Parser_is_source_failed
+//  ---------------------------
 //  
 //  Check whether the parser has a grammer failed.
 //
 
-extern "C" JNIEXPORT bool JNICALL
-Java_hoshi_Parser_is_1source_1failed(JNIEnv* env, 
-                                     jclass clazz, 
-                                     ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+bool csc_Parser_is_source_failed(ptrdiff_t this_handle, 
+                                 LPVOID exception_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -537,78 +524,76 @@ Java_hoshi_Parser_is_1source_1failed(JNIEnv* env,
             this_handle, 
             exception_handler_out(&exception_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_generate
-//  --------------------------
+//  csc_Parser_generate
+//  -------------------
 //  
 //  Generate a parser from a grammar file.
 //
 
-extern "C" JNIEXPORT void JNICALL
-Java_hoshi_Parser_generate(JNIEnv* env, 
-                           jclass clazz, 
-                           ptrdiff_t this_handle, 
-                           jstring source, 
-                           jstring kind_map, 
-                           int64_t debug_flags)
+extern "C" _declspec(dllexport)
+void csc_Parser_generate(ptrdiff_t this_handle, 
+                         LPVOID exception_handle, 
+                         LPWSTR source, 
+                         LPWSTR kind_map, 
+                         int64_t debug_flags)
 {
     
     void* exception_ptr = nullptr;
     
     ParserStatic::parser_generate(this_handle, 
                                   exception_handler_out(&exception_ptr), 
-                                  string_out(env, source), 
-                                  kind_map_out(env, kind_map), 
+                                  string_out(source), 
+                                  kind_map_out(kind_map), 
                                   debug_flags);
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_parse
-//  -----------------------
+//  csc_Parser_parse
+//  ----------------
 //  
 //  Parse a source string saving the Ast and error messages.
 //
 
-extern "C" JNIEXPORT void JNICALL
-Java_hoshi_Parser_parse(JNIEnv* env, 
-                        jclass clazz, 
-                        ptrdiff_t this_handle, 
-                        jstring source, 
-                        int64_t debug_flags)
+extern "C" _declspec(dllexport)
+void csc_Parser_parse(ptrdiff_t this_handle, 
+                      LPVOID exception_handle, 
+                      LPWSTR source, 
+                      int64_t debug_flags)
 {
     
     void* exception_ptr = nullptr;
     
     ParserStatic::parser_parse(this_handle, 
                                exception_handler_out(&exception_ptr), 
-                               string_out(env, source), 
+                               string_out(source), 
                                debug_flags);
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_get_1encoded_1ast
-//  -----------------------------------
+//  csc_Parser_get_encoded_ast
+//  --------------------------
 //  
 //  Return the Ast encoded as a string. We use this method to pass entire trees
 //  back to the caller to facilitate interlanguage calls.
 //
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_hoshi_Parser_get_1encoded_1ast(JNIEnv* env, 
-                                    jclass clazz, 
-                                    ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+void csc_Parser_get_encoded_ast(ptrdiff_t this_handle, 
+                                LPVOID exception_handle, 
+                                LPVOID result_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -618,24 +603,24 @@ Java_hoshi_Parser_get_1encoded_1ast(JNIEnv* env,
                                          exception_handler_out(&exception_ptr), 
                                          string_result_out(&result_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
-    return string_result_in(env, result_ptr);
+    string_result_in(result_handle, result_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_get_1encoded_1kind_1map
-//  -----------------------------------------
+//  csc_Parser_get_encoded_kind_map
+//  -------------------------------
 //  
 //  Return the kind map encoded as a string. We use this method to pass the kind
 //  map to the caller to facilitate interlanguage calls.
 //
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_hoshi_Parser_get_1encoded_1kind_1map(JNIEnv* env, 
-                                          jclass clazz, 
-                                          ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+void csc_Parser_get_encoded_kind_map(ptrdiff_t this_handle, 
+                                     LPVOID exception_handle, 
+                                     LPVOID result_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -645,77 +630,75 @@ Java_hoshi_Parser_get_1encoded_1kind_1map(JNIEnv* env,
                                               exception_handler_out(&exception_ptr), 
                                               string_result_out(&result_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
-    return string_result_in(env, result_ptr);
+    string_result_in(result_handle, result_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_get_1kind
-//  ---------------------------
+//  csc_Parser_get_kind
+//  -------------------
 //  
 //  Get the integer code for a given string.
 //
 
-extern "C" JNIEXPORT int JNICALL
-Java_hoshi_Parser_get_1kind(JNIEnv* env, 
-                            jclass clazz, 
-                            ptrdiff_t this_handle, 
-                            jstring kind_string)
+extern "C" _declspec(dllexport)
+int csc_Parser_get_kind(ptrdiff_t this_handle, 
+                        LPVOID exception_handle, 
+                        LPWSTR kind_string)
 {
     
     void* exception_ptr = nullptr;
     
     int result = ParserStatic::parser_get_kind(this_handle, 
                                                exception_handler_out(&exception_ptr), 
-                                               string_out(env, kind_string));
+                                               string_out(kind_string));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_get_1kind_1force
-//  ----------------------------------
+//  csc_Parser_get_kind_force
+//  -------------------------
 //  
 //  Get the integer code for a given string. If it doesn't exist then install
 //  it.
 //
 
-extern "C" JNIEXPORT int JNICALL
-Java_hoshi_Parser_get_1kind_1force(JNIEnv* env, 
-                                   jclass clazz, 
-                                   ptrdiff_t this_handle, 
-                                   jstring kind_string)
+extern "C" _declspec(dllexport)
+int csc_Parser_get_kind_force(ptrdiff_t this_handle, 
+                              LPVOID exception_handle, 
+                              LPWSTR kind_string)
 {
     
     void* exception_ptr = nullptr;
     
     int result = ParserStatic::parser_get_kind_force(this_handle, 
                                                      exception_handler_out(&exception_ptr), 
-                                                     string_out(env, kind_string));
+                                                     string_out(kind_string));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_get_1kind_1string
-//  -----------------------------------
+//  csc_Parser_get_kind_string
+//  --------------------------
 //  
 //  Get the text name for a numeric kind code.
 //
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_hoshi_Parser_get_1kind_1string(JNIEnv* env, 
-                                    jclass clazz, 
-                                    ptrdiff_t this_handle, 
-                                    int kind)
+extern "C" _declspec(dllexport)
+void csc_Parser_get_kind_string(ptrdiff_t this_handle, 
+                                LPVOID exception_handle, 
+                                LPVOID result_handle, 
+                                int kind)
 {
     
     void* exception_ptr = nullptr;
@@ -726,28 +709,27 @@ Java_hoshi_Parser_get_1kind_1string(JNIEnv* env,
                                          string_result_out(&result_ptr), 
                                          kind);
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
-    return string_result_in(env, result_ptr);
+    string_result_in(result_handle, result_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_add_1error
-//  ----------------------------
+//  csc_Parser_add_error
+//  --------------------
 //  
 //  Add another error to the message list. This is provided so that clients can
 //  use the parser message handler for all errors, not just parsing errors.
 //
 
-extern "C" JNIEXPORT void JNICALL
-Java_hoshi_Parser_add_1error(JNIEnv* env, 
-                             jclass clazz, 
-                             ptrdiff_t this_handle, 
-                             ErrorType error_type, 
-                             int64_t location, 
-                             jstring short_message, 
-                             jstring long_message)
+extern "C" _declspec(dllexport)
+void csc_Parser_add_error(ptrdiff_t this_handle, 
+                          LPVOID exception_handle, 
+                          ErrorType error_type, 
+                          int64_t location, 
+                          LPWSTR short_message, 
+                          LPWSTR long_message)
 {
     
     void* exception_ptr = nullptr;
@@ -756,24 +738,22 @@ Java_hoshi_Parser_add_1error(JNIEnv* env,
                                    exception_handler_out(&exception_ptr), 
                                    error_type, 
                                    location, 
-                                   string_out(env, short_message), 
-                                   string_out(env, long_message));
+                                   string_out(short_message), 
+                                   string_out(long_message));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_get_1error_1count
-//  -----------------------------------
+//  csc_Parser_get_error_count
+//  --------------------------
 //  
 //  Return the number of error messages over the error threshhold.
 //
 
-extern "C" JNIEXPORT int JNICALL
-Java_hoshi_Parser_get_1error_1count(JNIEnv* env, 
-                                    jclass clazz, 
-                                    ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+int csc_Parser_get_error_count(ptrdiff_t this_handle, LPVOID exception_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -781,23 +761,22 @@ Java_hoshi_Parser_get_1error_1count(JNIEnv* env,
     int result = ParserStatic::parser_get_error_count(this_handle, 
                                                       exception_handler_out(&exception_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_get_1warning_1count
-//  -------------------------------------
+//  csc_Parser_get_warning_count
+//  ----------------------------
 //  
 //  Return the number of error messages under the error threshhold.
 //
 
-extern "C" JNIEXPORT int JNICALL
-Java_hoshi_Parser_get_1warning_1count(JNIEnv* env, 
-                                      jclass clazz, 
-                                      ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+int csc_Parser_get_warning_count(ptrdiff_t this_handle, 
+                                 LPVOID exception_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -806,24 +785,24 @@ Java_hoshi_Parser_get_1warning_1count(JNIEnv* env,
             this_handle, 
             exception_handler_out(&exception_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
     return result;
     
 }
 
 //
-//  Java_hoshi_Parser_get_1encoded_1error_1messages
-//  -----------------------------------------------
+//  csc_Parser_get_encoded_error_messages
+//  -------------------------------------
 //  
 //  Return the error messages encoded as a string. We use this method to pass
 //  entire trees back to the caller to facilitate interlanguage calls.
 //
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_hoshi_Parser_get_1encoded_1error_1messages(JNIEnv* env, 
-                                                jclass clazz, 
-                                                ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+void csc_Parser_get_encoded_error_messages(ptrdiff_t this_handle, 
+                                           LPVOID exception_handle, 
+                                           LPVOID result_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -833,25 +812,25 @@ Java_hoshi_Parser_get_1encoded_1error_1messages(JNIEnv* env,
                                                     exception_handler_out(&exception_ptr), 
                                                     string_result_out(&result_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
-    return string_result_in(env, result_ptr);
+    string_result_in(result_handle, result_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_get_1source_1list
-//  -----------------------------------
+//  csc_Parser_get_source_list
+//  --------------------------
 //  
 //  Return a source list with embedded messages.
 //
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_hoshi_Parser_get_1source_1list(JNIEnv* env, 
-                                    jclass clazz, 
-                                    ptrdiff_t this_handle, 
-                                    jstring source, 
-                                    int indent)
+extern "C" _declspec(dllexport)
+void csc_Parser_get_source_list(ptrdiff_t this_handle, 
+                                LPVOID exception_handle, 
+                                LPVOID result_handle, 
+                                LPWSTR source, 
+                                int indent)
 {
     
     void* exception_ptr = nullptr;
@@ -860,24 +839,26 @@ Java_hoshi_Parser_get_1source_1list(JNIEnv* env,
     ParserStatic::parser_get_source_list(this_handle, 
                                          exception_handler_out(&exception_ptr), 
                                          string_result_out(&result_ptr), 
-                                         string_out(env, source), 
+                                         string_out(source), 
                                          indent);
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
-    return string_result_in(env, result_ptr);
+    string_result_in(result_handle, result_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_encode
-//  ------------------------
+//  csc_Parser_encode
+//  -----------------
 //  
 //  Create a string encoding of a Parser.
 //
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_hoshi_Parser_encode(JNIEnv* env, jclass clazz, ptrdiff_t this_handle)
+extern "C" _declspec(dllexport)
+void csc_Parser_encode(ptrdiff_t this_handle, 
+                       LPVOID exception_handle, 
+                       LPVOID result_handle)
 {
     
     void* exception_ptr = nullptr;
@@ -887,36 +868,35 @@ Java_hoshi_Parser_encode(JNIEnv* env, jclass clazz, ptrdiff_t this_handle)
                                 exception_handler_out(&exception_ptr), 
                                 string_result_out(&result_ptr));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
-    return string_result_in(env, result_ptr);
+    string_result_in(result_handle, result_ptr);
     
 }
 
 //
-//  Java_hoshi_Parser_decode
-//  ------------------------
+//  csc_Parser_decode
+//  -----------------
 //  
 //  Decode a previously created string into a parser
 //
 
-extern "C" JNIEXPORT void JNICALL
-Java_hoshi_Parser_decode(JNIEnv* env, 
-                         jclass clazz, 
-                         ptrdiff_t this_handle, 
-                         jstring str, 
-                         jstring kind_map)
+extern "C" _declspec(dllexport)
+void csc_Parser_decode(ptrdiff_t this_handle, 
+                       LPVOID exception_handle, 
+                       LPWSTR str, 
+                       LPWSTR kind_map)
 {
     
     void* exception_ptr = nullptr;
     
     ParserStatic::parser_decode(this_handle, 
                                 exception_handler_out(&exception_ptr), 
-                                string_out(env, str), 
-                                kind_map_out(env, kind_map));
+                                string_out(str), 
+                                kind_map_out(kind_map));
     
-    check_exceptions(env, exception_ptr);
+    check_exceptions(exception_handle, exception_ptr);
     
 }
 
-
+#endif // _WIN64

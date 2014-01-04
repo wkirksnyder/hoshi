@@ -39,22 +39,14 @@ The most important features are:
  - There is a guard mechanism to allow feedback from the parser
    to the scanner or from a previously scanned token.
 
-Everything described up to this point is working now in the source.
-The next steps are:
+ - The native library can be `wrapped' by small modules in other
+   languages to allow the library to be used by those other languages.
+   Those wrappers have been created in Java, C# and python so far.
 
- - Create wrappers in python, Java and C# that call the native code
-   library allowing the use of hoshi in those languages as well.
-
-Two down, one to go. The most recent check-in includes wrappers for Java
-and python so everything works for C++, Java and python clients. So
-far these have been tedious but straightforward. C# should be even
-easier because it's fairly similar to Java.
+Everything up to this point is done and working. The next steps are:
 
  - Write documentation. There are a lot of features here and it's
-   unusable without documentation. Although documentation is essential
-   multiple language support is a key feature so I don't really want
-   to encourage sharing until that's done. That's why documentaion is
-   my second priority.
+   unusable without documentation.
 
 Once I get this far here are some things I may or may not do:
 

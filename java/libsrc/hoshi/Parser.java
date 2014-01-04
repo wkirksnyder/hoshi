@@ -81,7 +81,7 @@ public class Parser {
     //  delete it when the garbage collector collects the Java version. 
     //
 
-    protected void finalizer() {
+    protected void finalize() throws Throwable {
         delete_parser(thisHandle);
     }
 

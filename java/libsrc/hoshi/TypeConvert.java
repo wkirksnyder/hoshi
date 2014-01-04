@@ -12,13 +12,13 @@ import java.lang.*;
 import java.util.*;
 import java.io.*;
 
-public class TypeConvert {
+class TypeConvert {
 
     //
     //  kindMapOut                                                       
     //  ----------                                                       
     //                                                                   
-    //  Accept a Java HashMap of an KindMap and marshall as a string. 
+    //  Accept a Java HashMap of a KindMap and marshall as a string. 
     //  This is the easiest way to transport an aggregate across the     
     //  interlanguage barrier.                                           
     //
@@ -79,8 +79,7 @@ public class TypeConvert {
             
             long negative = 1;
 
-            if (buffer.charAt(0) == '-')
-            {
+            if (buffer.charAt(0) == '-') {
                 negative = -1;
                 buffer.deleteCharAt(0);
             }

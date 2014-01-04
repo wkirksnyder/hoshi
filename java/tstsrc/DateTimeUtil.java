@@ -9,7 +9,7 @@ import java.lang.*;
 import java.util.*;
 import hoshi.*;
 
-public class DateTime {
+public class DateTimeUtil {
 
     //
     //  DateTime component types. 
@@ -91,8 +91,22 @@ public class DateTime {
             for (Ast ast: root.getChildren()) {
 
                 try {
+
                     dateTimeElement[ast.getKind()] = 
                         Integer.parseInt(ast.getLexeme());
+
+                    if (ast.getKind() == DateTimeType.Millisecond.ordinal()) {
+
+                        for (int i = 3; i < ast.getLexeme().length(); i++) {
+                            dateTimeElement[ast.getKind()] /= 10;
+                        }
+
+                        for (int i = ast.getLexeme().length(); i < 3; i++) {
+                            dateTimeElement[ast.getKind()] *= 10;
+                        }
+
+                    }
+
                 } catch (NumberFormatException e) {
                     System.err.println("Internal Error: Number Format error");
                     Runtime.getRuntime().halt(1);

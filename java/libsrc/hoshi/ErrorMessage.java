@@ -14,6 +14,8 @@ import java.util.*;
 
 public class ErrorMessage {
 
+    private static final Initializer initializer = Initializer.getInitializer();
+
     private ErrorType type;
     private String tag;
     private int severity;

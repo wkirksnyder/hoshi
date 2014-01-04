@@ -2,7 +2,7 @@
 //  UnknownError                                                 
 //  ------------                                                 
 //                                                               
-//  Error thrown when there is an unidentifiable error.
+//  Exception thrown when there is an unidentifiable error.
 //
 
 package hoshi;

@@ -2,7 +2,7 @@
 //  SourceError                                                 
 //  -----------                                                 
 //                                                               
-//  Error thrown when there is any kind of error in the source. 
+//  Exception thrown when there is any kind of error in the source. 
 //
 
 package hoshi;
