@@ -1,0 +1,183 @@
+/*
+ *  Hoshi Instructions CSS                                             
+ *  ----------------------                                             
+ *                                                                     
+ *  Styles for the Hoshi instruction document. This is new to me so be 
+ *  merciful when you find stupidity here.                             
+ */
+
+/*
+ *  Basic Formatting 
+ *  ---------------- 
+ */
+
+h1 {
+    font-size: 20pt;
+    font-family: sans-serif;
+    color: rgb(0%, 0%, 50%);
+}
+
+h2 {
+    font-size: 12pt;
+    font-family: sans-serif;
+    color: rgb(0%, 0%, 50%);
+}
+
+div.outer_block {
+    width: 720px;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 0;
+    margin-right: auto;
+}
+
+p, li {
+    font-family: serif;
+    font-size: 12pt;
+    width: 45em;
+}
+
+li {
+    padding-left: 0;
+    margin-left: 0;
+    width: 43em;
+}
+
+p.center {
+    text-align: center;
+}
+
+table.boxed {
+    table-layout: auto;
+    border-collapse: collapse;
+    border: 2px solid black;
+    width: 660px;
+    margin-left: 30px;
+    font-family: serif;
+}
+
+tr.boxed {
+}
+
+th.boxed {
+    text-align: left;
+    border: 1px solid black;
+    padding-left: 5px;
+    padding-right: 5px;
+    font-size: 12pt;
+}
+
+td.boxed {
+    border: 1px solid black;
+    padding-left: 5px;
+    padding-right: 5px;
+    font-size: 12pt;
+}
+
+/*
+ *  BNFGrammar
+ *  ----------
+ */
+
+table.bnf_grammar {
+    font-family: serif;
+    font-size: 14pt;
+    margin: auto;
+}
+
+/*
+ *  TreeDiagram
+ *  -----------
+ */
+
+canvas.tree_diagram {
+    display: block;
+    background-color: #FFFFFF;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/*
+ *  TreeBuildingWidget 
+ *  ------------------ 
+ */
+
+table.tree_building_widget {
+    table-layout: auto;
+    border: 2px solid black;
+    border-collapse: collapse;
+    background-color: #EEE;
+    margin-left: 0;
+    margin-right: auto;
+    font-family: serif;
+}
+
+canvas.tree_building_widget {
+    background-color: #EEE;
+}
+
+tr.tree_building_widget {
+}
+
+td.tree_building_widget_rule {
+    height: 2em;
+    border-top: 2px solid black;
+    text-align: left;
+    vertical-align: middle;
+    font-family: serif;
+    font-size: 12pt;
+}
+
+td.tree_building_widget_buttons {
+    height: 2em;
+    border-top: 2px solid black;
+    text-align: right;
+    vertical-align: middle;
+}
+
+/*
+ *  CodeSample
+ *  ----------
+ */
+
+table.code_sample {
+    table-layout: auto;
+    border: 2px solid black;
+    border-collapse: collapse;
+    background-color: #EEE;
+    margin-left: 0;
+    margin-right: auto;
+    font-family: serif;
+}
+
+td.code_sample_code {
+    background-color: #EEE;
+}
+
+td.code_sample_language {
+    height: 2em;
+    border-top: 2px solid black;
+    text-align: left;
+    vertical-align: middle;
+    font-family: serif;
+    font-size: 12pt;
+}
+
+td.code_sample_buttons {
+    height: 2em;
+    border-top: 2px solid black;
+    text-align: right;
+    vertical-align: middle;
+}
+
+div.code_sample {
+    background-color: #EEE;
+    width: 45em;
+    height: 35em;
+    font-family: monospace;
+    font-size: 12pt;
+    overflow: scroll;
+}
+    

@@ -1,0 +1,3287 @@
+<!doctype html>
+<html>
+<head>
+<title>Using Hoshi</title>
+<link rel="stylesheet" href="hoshi.css"/>
+<script src="./hoshi.js"></script>
+</head>
+<body>
+
+<section id="Preface"><h1>Preface</h1>
+
+<p>
+Hoshi is a parser generator intended to be lighter in weight and easier to use than
+typical parser generators. Other parser generators are generally implemented as code
+generators while Hoshi is implemented as a native library. A code
+generator provides a bit more flexibility, principally in the ability to provide
+feedback from the semantic actions to the scanner, but the cost of this flexibility
+is more complexity and that flexibility is rarely needed so we think a simpler library implementation
+will find a large set of appropriate uses.
+</p>
+
+<h2>Feature Overview</h2>
+
+<p>
+Beyond the implementation as a library some of the significant features of Hoshi
+are:
+</p>
+
+<ul>
+<li>
+The parsing methodology is LALR(<i>k</i>) generated from a BNF grammar and using lookahead
+strings of varying length for efficiency. Most actions are triggered by a single
+token lookahead but if a longer lookahead is needed to resolve an action the parser
+will access that extended lookahead.
+</li>
+
+<li>
+The rules are given in BNF with a few extensions (grouping, '|', '*', '?' and '+').
+There is also a special syntax for operator precedence. All these extensions are just
+syntactic sugar translated into pure BNF internally.
+</li>
+
+<li>
+The scanning technology is a DFA generated from regular expressions. In order to simplify
+scanner specification there are defaults for many token types and library tokens for
+many common forms, so very little must be explicitly given in the grammar.
+</li>
+
+<li>
+Error recovery is based on a forward move technique that parses a superset of the
+described language after an error is found. The result is that many syntax errors
+are found in one parse with a minimum of spurious messages. Error recovery is fully
+automatic, requiring no information in the grammar.
+</li>
+
+<li>
+There is a simple notation for AST creation attached to each rule. If no specification
+is provided a concrete tree is returned but it's a simple matter to describe the AST desired.
+</li>
+
+<li>
+The scanner uses a guard mechanism which allows feedback from prior tokens or
+reduce actions to control the tokens recognized.
+</li>
+
+<li>
+The native library can be `wrapped' by small modules in other languages to allow
+the library to be used by those other languages. To date those wrappers have been created
+in Java, C# and Python.
+</li>
+</ul>
+
+<p>
+Although Hoshi is intended to be easy to use the feature set compares quite well with
+other parser generators. You should be able to use it to conveniently parse a rich
+set of languages.
+</p>
+
+<h2>Organization Of This Document</h2>
+
+<p>
+The next section, <a href="#GettingStarted">Getting Started</a>, is a tutorial
+introduction in which we develop a parser for simple arithmetic expressions. If you
+have used a parser generator before you will want to skim or skip much of this and
+just focus on the example code.
+</p>
+
+<p>
+In <a href="#GrammarDetails">Grammar Details</a> we will cover all the remaining
+details of the grammar.
+</p>
+
+<p>
+In <a href="#TokenDetails">Token Details</a> we will cover all the remaining
+details of the grammar.
+</p>
+
+<p>
+In <a href="#ClientApi">The Client Api</a> we will cover all api functions available
+in implementation languages.
+</p>
+
+<p>
+And finally we have a section with <a href="#InstallationInstructions">Installation
+Instructions</a>.
+</p>
+
+<p>
+We support several implementation languages in Hoshi but the APIs are quite similar.
+We will generally describe the provided functions once but give examples in all
+available implementation languages. You can choose the language you wish in all our
+sample code widgets.
+</p>
+</section>
+
+<section id="GettingStarted"><h1>Getting Started</h1>
+
+<p>
+The best way to learn any software, not just a programming language, is to
+jump in and fill in details as you need them. That's just what we are going to do
+here. As an example problem we'll use the evaluation of simple arithmetic expressions.
+Our expressions have integer operands and the four infix operators '+',
+'-', '*' and '/'. The operators will have customary
+precedence and association, so
+multiplication and division are performed before addition and subtraction and
+operations at the same precedence associate to the left. Finally, we will allow
+parentheses to override the normal precedence and association rules. As an example 
+string fitting this description we'll use:
+</p>
+
+<p class="center">25 - (2 + (3 + 4)) * 2</p>
+
+<p>
+What we would like Hoshi to do is turn this into a form that can be easily evaluated.
+The form of tree we'll use here is called an <i>Abstract Syntax Tree (AST)</i> which
+contains the important information in the source string in an easily traversable
+form. A possible AST for our example would look something like this:
+</p>
+
+<div class="outer_block">
+<script type="text/TreeDiagram">
+:: height 300
+:: width 270
+[{
+
+    nodeStyles:
+    [
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 12pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "12pt serif"}],
+    ],
+    trees:
+    [
+        ["-",
+            ["25"],
+            ["*",
+                ["+",
+                    ["2"],
+                    ["+",
+                        ["3"],
+                        ["4"]]],
+                ["2"]]]
+    ]
+
+}]
+</script>
+</div>
+
+<p>
+Once we can produce the AST form of an expression evaluating the expression is simple.
+We just recursively descend
+the tree, where we find operands we return them, where we find operators we evaluate
+each child, perform the operation and return the result.
+</p>
+
+<h2>A BNF Grammar</h2>
+
+<p>
+In order to perform the transformation we've described so far Hoshi needs a
+specification telling it what the input source will look like and how to process it.
+This process vaguely resembles the use of a regular expression library. A regex
+library uses a specification (the regular expression) to generate a matching engine.
+This engine is then used to process a source string for a match. If one is found the
+engine can use information embedded in the expression to extract pieces of the source
+string. The regex library may have convenience functions that do all this in one
+step, but that's just a fa&ccedil;ade. Behind the scenes it's still a two step process:
+generate an engine from the pattern, then run the engine on a source string.
+</p>
+
+<p>
+The specifications used by Hoshi are more complex than regular expressions since we
+are trying to process more complex languages. The specification Hoshi uses is a
+grammar in <i>Backus-Naur Form (BNF)</i>. A BNF grammar consists of a set of
+<i>rules</i> which each look like this:
+</p>
+
+<div class="outer_block">
+<script type="text/BNFGrammar">
+E ::= E + E
+</script>
+</div>
+
+<p>
+Each rule has a single left hand side symbol (<i>E</i> in this example) and zero or
+more right hand symbols (<i>E</i> + <i>E</i> in this example). We say that the left
+hand symbol <i>produces</i> the right hand side. These symbols can be either
+<i>terminals</i> or <i>nonterminals</i>, where nonterminals appear on the left hand
+side of some rule and can produce something else and terminals do not appear on the
+left hand side of any rule. In this example <i>E</i> is a nonterminal and '+' is a
+terminal.
+</p>
+
+<p>
+A grammar consists of a set of these rules and one nonterminal designated as the
+<i>start symbol</i>. To generate a string in the language recognized by the grammar
+you start with the start symbol, then keep replacing a nonterminal with the right
+hand side of a rule having that nonterminal on the left until you have a string of
+only terminals. The set of strings that can be generated in this way is called the
+language recognized by the grammar.
+</p>
+
+<p>
+With these definitions we can give a grammar for arithmetic expressions. If we use
+<i>S</i> as the start symbol here is the rest of the grammar:
+</p>
+
+<div class="outer_block">
+<script type="text/BNFGrammar">
+:: class bnf_grammar
+    S ::= E
+    E ::= E + T 
+    E ::= E - T
+    E ::= T
+    T ::= T * F
+    T ::= T / F
+    T ::= F
+    F ::= Number
+    F ::= ( E )
+</script>
+</div>
+
+<p>
+Here the terminals are '+', '-', '*', '/', '(', ')' and <i>Number</i>. These are
+somewhat loosely defined right now as things that appear as primitives in our
+language. In the case of the operators we'll use the single character operator and 
+in the case of number we'll use a string of digits. We could use grammar rules to
+describe numbers as well and consider individual digits as terminals but that would
+just make the expressions harder to manipulate in the end.
+</p>
+
+<p>
+The nonterminals in our grammar are <i>S</i>, <i>E</i>, <i>T</i> and
+<i>F</i>.
+</p>
+
+<p>
+To use the grammar to derive a sentence in the associated language we start with the 
+start symbol, <i>S</i>, and keep replacing one nonterminal in our string with the
+symbols from the right side of a rule defining that nonterminal until there are only
+terminals in the string. We use the notation:
+</p>
+
+<div class="outer_block">
+<script type="text/BNFGrammar">
+    a b X c d ::== a b e c d
+</script>
+</div>
+
+<p>
+to denote the replacement of the nonterminal <i>X</i> by the terminal <i>e</i>, where
+there must have been a rule:
+</p>
+
+<div class="outer_block">
+<script type="text/BNFGrammar">
+    X ::= e
+</script>
+</div>
+
+<p>
+in the grammar for that replacement to be appropriate. With this knowledge of the
+derivation process we can see that the grammar above <i>does</i> generate our desired
+expression as follows:
+</p>
+
+<div class="outer_block">
+<script type="text/BNFGrammar">
+    S ::== E
+      ::== E - T
+      ::== E - T * F
+      ::== E - T * 2
+      ::== E - F * 2
+      ::== E - ( E ) * 2
+      ::== E - ( E + T ) * 2
+      ::== E - ( E + F ) * 2
+      ::== E - ( E + ( E ) ) * 2
+      ::== E - ( E + ( E + T ) ) * 2
+      ::== E - ( E + ( E + F ) ) * 2
+      ::== E - ( E + ( E + 4 ) ) * 2
+      ::== E - ( E + ( T + 4 ) ) * 2
+      ::== E - ( E + ( F + 4 ) ) * 2
+      ::== E - ( E + ( 3 + 4 ) ) * 2
+      ::== E - ( T + ( 3 + 4 ) ) * 2
+      ::== E - ( F + ( 3 + 4 ) ) * 2
+      ::== E - ( 2 + ( 3 + 4 ) ) * 2
+      ::== T - ( 2 + ( 3 + 4 ) ) * 2
+      ::== F - ( 2 + ( 3 + 4 ) ) * 2
+      ::== 25 - ( 2 + ( 3 + 4 ) ) * 2
+</script>
+</div>
+
+<p>
+We can now see how a grammar can generate sentences in a language, but that's the
+reverse of what our objective. What we'd really like to do is take a sentence
+and construct a tree containing the same information in a form that's easier to
+handle. Fortunately we can perform this process in reverse. Given a list of symbols
+we can look for sequences of the right hand side of rules and replace them with the
+left and build a tree as we go. We first consider each symbol as a tree by itself.
+Then we start the replacement process and at each step gather the trees associated
+with the right hand side into a single tree associated with the left hand side. When
+the process is complete we will have a single tree associated with the start symbol.
+</p>
+
+<p>
+To get a feel for how this works, experiment a bit with the widget that follows.
+Initially we see the list of symbols in our expression. You can use the buttons at
+the bottom to step forward and see the symbol replacements and tree building take
+place. There are also buttons to let you back up or jump to the beginning or end.
+Take a few minutes to experiment with this before continuing as it's key to
+understanding the parsing process.
+</p>
+
+
+<div class="outer_block">
+<script type="text/TreeBuildingWidget">
+[{
+
+    nodeStyles:
+    [
+        [/[0-9]+/,    {font: "rm", style: "open", jfont: "10pt serif"}],
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 10pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "10pt serif"}],
+    ],
+    derivation:
+    [
+        {
+            rule:   "",
+            trees:  
+            [
+                ["25"],
+                ["-"],
+                ["("],
+                ["2"],
+                ["+"],
+                ["("],
+                ["3"],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "F ::= Number",
+            trees:  
+            [
+                ["F", ["25"]],
+                ["-"],
+                ["("],
+                ["2"],
+                ["+"],
+                ["("],
+                ["3"],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "T ::= F",
+            trees:  
+            [
+                ["T", ["F", ["25"]]],
+                ["-"],
+                ["("],
+                ["2"],
+                ["+"],
+                ["("],
+                ["3"],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "E ::= T",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["2"],
+                ["+"],
+                ["("],
+                ["3"],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "F ::= Number",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["F", ["2"]],
+                ["+"],
+                ["("],
+                ["3"],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "T ::= F",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["T", ["F", ["2"]]],
+                ["+"],
+                ["("],
+                ["3"],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "E ::= T",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["("],
+                ["3"],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "F ::= Number",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["("],
+                ["F", ["3"]],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "T ::= F",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["("],
+                ["T", ["F", ["3"]]],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "E ::= T",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["("],
+                ["E", ["T", ["F", ["3"]]]],
+                ["+"],
+                ["4"],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "F ::= Number",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["("],
+                ["E", ["T", ["F", ["3"]]]],
+                ["+"],
+                ["F", ["4"]],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "T ::= F",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["("],
+                ["E", ["T", ["F", ["3"]]]],
+                ["+"],
+                ["T", ["F", ["4"]]],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "E ::= T + F",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["("],
+                ["E", ["E", ["T", ["F", ["3"]]]],
+                      ["+"],
+                      ["T", ["F", ["4"]]]],
+                [")"],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "F ::= ( E )",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["F", ["("],
+                      ["E", ["E", ["T", ["F", ["3"]]]],
+                            ["+"],
+                            ["T", ["F", ["4"]]]],
+                      [")"]],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "T ::= F",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["T", ["F", ["2"]]]],
+                ["+"],
+                ["T", ["F", ["("],
+                            ["E", ["E", ["T", ["F", ["3"]]]],
+                                  ["+"],
+                                  ["T", ["F", ["4"]]]],
+                            [")"]]],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "E ::= E + T",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["("],
+                ["E", ["E", ["T", ["F", ["2"]]]],
+                      ["+"],
+                      ["T", ["F", ["("],
+                                  ["E", ["E", ["T", ["F", ["3"]]]],
+                                        ["+"],
+                                        ["T", ["F", ["4"]]]],
+                                  [")"]]]],
+                [")"],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "F ::= ( E )",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["F", ["("],
+                      ["E", ["E", ["T", ["F", ["2"]]]],
+                            ["+"],
+                            ["T", ["F", ["("],
+                                        ["E", ["E", ["T", ["F", ["3"]]]],
+                                              ["+"],
+                                              ["T", ["F", ["4"]]]],
+                                        [")"]]]],
+                      [")"]],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "T ::= F",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["T", ["F", ["("],
+                            ["E", ["E", ["T", ["F", ["2"]]]],
+                                  ["+"],
+                                  ["T", ["F", ["("],
+                                              ["E", ["E", ["T", ["F", ["3"]]]],
+                                                    ["+"],
+                                                    ["T", ["F", ["4"]]]],
+                                              [")"]]]],
+                            [")"]]],
+                ["*"],
+                ["2"],
+            ],
+        },
+        {
+            rule:   "F ::= Number",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["T", ["F", ["("],
+                            ["E", ["E", ["T", ["F", ["2"]]]],
+                                  ["+"],
+                                  ["T", ["F", ["("],
+                                              ["E", ["E", ["T", ["F", ["3"]]]],
+                                                    ["+"],
+                                                    ["T", ["F", ["4"]]]],
+                                              [")"]]]],
+                            [")"]]],
+                ["*"],
+                ["F", ["2"]],
+            ],
+        },
+        {
+            rule:   "T ::= T * F",
+            trees:  
+            [
+                ["E", ["T", ["F", ["25"]]]],
+                ["-"],
+                ["T", ["T", ["F", ["("],
+                                ["E", ["E", ["T", ["F", ["2"]]]],
+                                      ["+"],
+                                      ["T", ["F", ["("],
+                                                  ["E", ["E", ["T", ["F", ["3"]]]],
+                                                        ["+"],
+                                                        ["T", ["F", ["4"]]]],
+                                                  [")"]]]],
+                                [")"]]],
+                    ["*"],
+                    ["F", ["2"]]],
+            ],
+        },
+        {
+            rule:   "E ::= E - T",
+            trees:  
+            [
+                ["E", ["E", ["T", ["F", ["25"]]]],
+                      ["-"],
+                      ["T", ["T", ["F", ["("],
+                                      ["E", ["E", ["T", ["F", ["2"]]]],
+                                            ["+"],
+                                            ["T", ["F", ["("],
+                                                        ["E", ["E", ["T", ["F", ["3"]]]],
+                                                              ["+"],
+                                                              ["T", ["F", ["4"]]]],
+                                                        [")"]]]],
+                                      [")"]]],
+                          ["*"],
+                          ["F", ["2"]]]],
+            ],
+        },
+        {
+            rule:   "S ::= E",
+            trees:  
+            [
+                ["S", ["E", ["E", ["T", ["F", ["25"]]]],
+                            ["-"],
+                            ["T", ["T", ["F", ["("],
+                                            ["E", ["E", ["T", ["F", ["2"]]]],
+                                                  ["+"],
+                                                  ["T", ["F", ["("],
+                                                              ["E", ["E", ["T", ["F", ["3"]]]],
+                                                                    ["+"],
+                                                                    ["T", ["F", ["4"]]]],
+                                                              [")"]]]],
+                                            [")"]]],
+                                ["*"],
+                                ["F", ["2"]]]]],
+            ],
+        },
+    ],
+}]
+</script>
+</div>
+
+<p>
+This still isn't an abstract syntax tree but we're starting to get close. The AST is
+in there, it's just got some information we don't really need. This is called a
+<i>Concrete Syntax Tree</i> and it contains the full text of the parse.
+</p>
+
+<p>
+Before we refine this into an AST we're going to shift into using Hoshi itself
+instead of talking about models. Hoshi will accept a grammar quite similar to the one
+we've been using but we need to make it more keyboard-friendly and impose a few more
+rules. 
+</p>
+
+<h2>A Hoshi Grammar</h2>
+
+<p>
+A nonterminal in a Hoshi grammar is like most programming language identifiers, it
+begins with a letter and is followed by a string of letters, numbers and underscores.
+The convention is that nonterminals are capitalized camel-case strings, like
+<code>Expression</code> or <code>RuleList</code>. Since all keywords are lowercase
+using this format for nonterminals provides a visual separation and means that if
+more keywords are ever added to Hoshi older grammars will still work.
+</p>
+
+<p>
+In place of the '&rarr;' we'll use <code>::=</code>. You do not need to specify a
+start symbol for Hoshi, it will assume the left hand side of the first rule should be
+the right hand side of the start symbol and provide the start symbol and rule for
+you.
+</p>
+
+<p>
+Terminals need a bit more specification than we needed in our model, because now we
+have to recognize them. In principle Hoshi uses regular expressions to
+specify tokens but a number of shorthands are provided so relatively few must be
+provided explicitly.
+</p>
+
+<p>
+Most tokens are just short strings of characters that don't vary, like <code>=</code> or
+<code>for</code>. For these we take the string itself in either single or double
+quotes as the terminal name and Hoshi will generate the regular expression for that
+string. This generally handles the keywords, operators and punctuation of the
+language we are trying to recognize. 
+</p>
+
+<p>
+The remaining tokens are literals and comments, which have strings that do vary so can
+not be specified by just a string in quotes but need a regular expression. The names
+of these are contained within angle brackets like <code>&lt;integer&gt;</code> or
+<code>&lt;string&gt;</code>. What we tend to see is the same literal forms used in many
+languages so while Hoshi does allow you to specify the regular expression for a token
+there is also a set of library tokens for commonly used forms. In particular,
+<code>&lt;integer&gt;</code> will recognize the numeric literals of our arithmetic
+expressions.
+</p>
+
+<p>
+With this information we are now ready to give a Hoshi grammar for our simple
+arithmetic expressions:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    E ::= E '+' T 
+    E ::= E '-' T
+    E ::= T
+    T ::= T '*' F
+    T ::= T '/' F
+    T ::= F
+    F ::= &lt;integer&gt;
+    F ::= '(' E ')'
+</pre></code>
+
+<p>
+Now that we understand the general process and we have a grammar we are ready to use
+the grammar to construct a parser and use it to parse our arithmetic expressions. To use Hoshi
+we perform the following steps:
+</p>
+<ol>
+<li> Construct a parser. This takes no arguments but the only thing you can do with
+it is generate the parsing engine from a grammar.
+</li>
+<li> Generate the parsing engine. If there are any errors the exception
+<code>GrammarError</code> is thrown and you can use the error message list in the
+parser to find out what was wrong.
+</li>
+<li> Parse a source string. If there are any syntax errors in the string the
+exception <code>SourceError</code> is thrown and you can use the error message list in the
+parser to find out what was wrong.
+</li>
+<li>
+Pull the resulting tree out of the parser and process it.
+</li>
+</ol>
+
+<p>
+We are ready to provide a sample program to illustrate the use of Hoshi. Hoshi
+supports multiple implementation languages so each time we show sample code we will
+use a widget which lets you choose the language you wish using buttons at the bottom.
+The implementations are nearly identical except for differences among those
+languages.
+</p>
+
+<p>
+There is one difference among languages to make note of in this first example. Hoshi
+requires a grammar as a string, but these can be fairly long and complex strings. In
+languages which allow multi-line string literals these can be conveniently stored in
+the source code. In languages which don't have this feature it's easier to store the
+string in a file or resource. In what follows C++, C# and Python support
+multi-line string literals but as of this writing Java does not. So in Java we'll
+assume the grammar is stored in a separate file either on the file system or in the
+jar file.
+</p>
+
+<p>
+Without further discussion, here are programs using the Hoshi library and the grammar provided
+previously to parse the example source string and dump out the resulting tree:
+</p>
+
+<script type="text/CodeSample">
+!! C++
+#include <exception>
+#include <string>
+#include <iostream>
+#include "Parser.H"
+
+using namespace std;
+using namespace hoshi;
+
+const string grammar = R"!(
+
+    E ::= E '+' T 
+    E ::= E '-' T
+    E ::= T
+    T ::= T '*' F
+    T ::= T '/' F
+    T ::= F
+    F ::= <integer>
+    F ::= '(' E ')'
+
+)!";
+
+int main() 
+{
+
+    Parser parser;
+    try
+    {
+        parser.generate(grammar);
+        parser.parse("25 - (2 + (3 + 4)) * 2");
+        parser.dump_ast(parser.get_ast());
+    }
+    catch (GrammarError& e)
+    {
+        cout << "Grammar errors:" << endl;
+        for (auto msg: parser.get_error_messages())
+        {
+            cout << msg.get_string() << endl;
+        }
+    }
+    catch (SourceError& e)
+    {
+        cout << "Source errors:" << endl;
+        for (auto msg: parser.get_error_messages())
+        {
+            cout << msg.get_string() << endl;
+        }
+    }
+        
+}
+!! Java
+//  Grammar file: ExampleOne.G
+
+    E ::= E '+' T 
+    E ::= E '-' T
+    E ::= T
+    T ::= T '*' F
+    T ::= T '/' F
+    T ::= F
+    F ::= <integer>
+    F ::= '(' E ')'
+
+//  Java file: ExampleOne.java
+
+import java.lang.*;
+import java.util.*;
+import hoshi.*;
+
+public class ExampleOne {
+
+    public static void main(String [] args) {
+
+        Parser parser = null;
+        try {
+            parser = new Parser();
+            parser.generate(Parser.loadFile("ExampleOne.G"));
+            parser.parse("25 - (2 + (3 + 4)) * 2");
+            parser.dumpAst(parser.getAst());
+        } catch (GrammarError e) {
+            for (ErrorMessage m: parser.getErrorMessages()) {
+                System.out.println(m.getString());
+            }
+            Runtime.getRuntime().halt(1);
+        } catch (SourceError e) {
+            for (ErrorMessage m: parser.getErrorMessages()) {
+                System.out.println(m.getString());
+            }
+            Runtime.getRuntime().halt(1);
+        }
+
+    }
+
+}
+!! C#
+using System;
+using System.Text;
+using System.Collections.Generic;
+using hoshi;
+
+public class ExampleOne
+{
+
+    private const string grammar = @"
+        E ::= E '+' T 
+        E ::= E '-' T
+        E ::= T
+        T ::= T '*' F
+        T ::= T '/' F
+        T ::= F
+        F ::= <integer>
+        F ::= '(' E ')'
+    ";
+
+    public static void Main()
+    {
+
+        Parser parser = null;
+        try
+        {
+            parser = new Parser();
+            parser.Generate(grammar);
+            parser.Parse("25 - (2 + (3 + 4)) * 2");
+            parser.DumpAst(parser.GetAst());
+        }
+        catch (GrammarError)
+        {
+            foreach (ErrorMessage m in parser.GetErrorMessages())
+            {
+                Console.WriteLine(m.String);
+            }
+            Environment.Exit(1);
+        }
+        catch (SourceError)
+        {
+            foreach (ErrorMessage m in parser.GetErrorMessages())
+            {
+                Console.WriteLine(m.String);
+            }
+            Environment.Exit(1);
+        }
+
+    }
+
+}
+!! Python
+import Hoshi
+
+GRAMMAR = '''
+    E ::= E '+' T 
+    E ::= E '-' T
+    E ::= T
+    T ::= T '*' F
+    T ::= T '/' F
+    T ::= F
+    F ::= <integer>
+    F ::= '(' E ')'
+'''                  
+
+parser = Hoshi.Parser()
+try:
+    parser.generate(GRAMMAR)
+    parser.parse("25 - (2 + (3 + 4)) * 2")
+    parser.get_ast().dump()
+except Hoshi.GrammarError as e:
+    for message in parser.get_error_messages():
+        print(message.get_string())
+    exit(1)
+except Hoshi.SourceError as e:
+    for message in parser.get_error_messages():
+        print(message.get_string())
+    exit(1)
+</script>
+
+<p>
+The program we have so far creates a parsing engine, parses a source string and dumps
+the resulting tree. This dump procedure is a convenience method provided by Hoshi to
+assist in program development, but what we really want to do is process the tree to
+evaluate the expression. For that we first need to understand the structure of the
+tree.
+</p>
+
+<h2>Building An Abstract Syntax Tree</h2>
+
+<p>
+Each AST node consists of the following four components:
+</p>
+
+<ul>
+<li>
+A <i>kind</i> indicator specifying the type of node. By default this is the terminal or
+nonterminal name but when we are creating our own tree building rules we can use
+anything we want for the node kind.
+</li>
+<li>
+A <i>location</i> integer giving the offset from the front of the sentence. This can
+be used in constructing error messages later when a semantic error is discovered
+after the parse.
+</li>
+<li>
+A <i>lexeme</i> string for non-trivial token forms providing the text of the token.
+In our example grammar the <code>&lt;integer&gt;</code> can represent any integer and
+without the lexeme there would be no way to determine the integer value.
+</li>
+<li>
+A list of child nodes.
+</li>
+</ul>
+
+<p>
+When we run the example program above we will get the following output:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    E(2) @ 0
+        &lt;integer&gt;(14) [25] @ 0
+        '-'(9) @ 3
+        T(3) @ 5
+            F(4) @ 5
+                '('(5) @ 5
+                E(2) @ 6
+                    &lt;integer&gt;(14) [2] @ 6
+                    '+'(8) @ 8
+                    F(4) @ 10
+                        '('(5) @ 10
+                        E(2) @ 11
+                            &lt;integer&gt;(14) [3] @ 11
+                            '+'(8) @ 13
+                            &lt;integer&gt;(14) [4] @ 15
+                        ')'(6) @ 16
+                ')'(6) @ 17
+            '*'(7) @ 19
+            &lt;integer&gt;(14) [2] @ 21
+</pre></code>
+
+<p>
+In this listing we see one line per node. The first thing we see is the kind of node
+in both text and numeric form, the <code>@</code> <i>n</i> expression is the location,
+within square brackets we have the lexeme and the children are on subsequent lines
+indented a few spaces. So the diagram form of the tree produced is:
+</p>
+
+<div class="outer_block">
+<script type="text/TreeDiagram">
+:: height 500
+:: width 300
+:: margin 35
+[{
+
+    nodeStyles:
+    [
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 12pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "12pt serif"}],
+    ],
+    trees:
+    [
+        ["E",
+            ["<integer>"],
+            ["-"],
+            ["T",
+                ["F",
+                    ["("],
+                    ["E", 
+                        ["<integer>"],
+                        ["+"],
+                        ["F",
+                            ["("],
+                            ["E",
+                                ["<integer>"],
+                                ["+"],
+                                ["<integer>"]],
+                            [")"]]],
+                    [")"]],
+                ["*"],
+                ["<integer>"]]]
+    ]
+
+}]
+</script>
+</div>
+
+<p>
+The tree we've created so far has much of the detail of the concrete syntax tree
+except any nodes with a single child are removed. This is Hoshi's default
+behavior as these nodes rarely contain any useful information. They can be reinstated
+through the AST specifications in the rare case they are needed.
+</p>
+
+<p>
+But we're still not to the AST we want. When Hoshi reduces by a rule with more than
+one symbol on the right hand side it produces a node like those in the concrete
+syntax tree. The only way to avoid that is to specify the node to be created in those
+cases.
+</p>
+
+<p>
+Hoshi allows a concise mechanism to describe the tree desired. The syntax of this
+follows the right hand side of a rule. It starts with a colon followed by the
+expression of a single node. The expression can be <code>$</code> <i>n</i> indicating
+a child or a parenthesized list of elements to construct a new child. The elements of
+that list can be identifiers, which specify the node kind, <code>$</code> <i>n</i>
+specifying a child, or <code>&</code> <i>n</i> specifying a lexeme. There are many
+more possibilities but this is enough to form the AST for our arithmetic expression
+grammar. When we add this to the grammar we have been using we get the following:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    E ::= E '+' T     : (Plus $1 $3)
+    E ::= E '-' T     : (Minus $1 $3)
+    E ::= T
+    T ::= T '*' F     : (Times $1 $3)
+    T ::= T '/' F     : (Divide $1 $3)
+    T ::= F
+    F ::= &lt;integer&gt;   : (Number &1)
+    F ::= '(' E ')'   : $2
+</pre></code>
+
+<p>
+Let's look at the first rule to see how this works. If we took the default tree
+building rule we would get a node with 3 children. It would have a kind of <i>E</i>
+and one child for each symbol on the right of the rule. With our change we get a node
+with 2 children. It will have a kind of <i>Plus</i> and two children made of of the
+trees associated with the <i>E</i> symbol and the <i>T</i> symbol on the right. The
+tree associated with the plus sign is not useful so we ignore it.
+</p>
+
+<p>
+If we use this grammar in the program above we will get the following listing:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    Minus(3) @ 5
+        Number(6) [25] @ 5
+        Times(4) @ 11
+            Plus(2) @ 11
+                Number(6) [2] @ 11
+                Plus(2) @ 16
+                    Number(6) [3] @ 16
+                    Number(6) [4] @ 20
+            Number(6) [2] @ 26
+</pre></code>
+
+<p>
+Which corresponds to the AST we want:
+</p>
+
+<div class="outer_block">
+<script type="text/TreeDiagram">
+:: height 300
+:: width 300
+:: margin 35
+[{
+
+    nodeStyles:
+    [
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 12pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "12pt serif"}],
+    ],
+    trees:
+    [
+        ["Minus",
+            ["Number:25"],
+            ["Times",
+                ["Plus",
+                    ["Number:2"],
+                    ["Plus",
+                        ["Number:3"],
+                        ["Number:4"]]],
+                ["Number:2"]]]
+    ]
+
+}]
+</script>
+</div>
+
+<h2>Using The Abstract Syntax Tree</h2>
+
+<p>
+We have an AST in the form we want and are ready to write code to process it. Up
+until now we've only been dumping the AST, which is useful in debugging but we really
+parse languages to do something deeper with the resulting AST. The general form of
+that processing is to traverse the AST recursively processing each node. That
+processing is typically dependent on the <i>kind</i> of the node. Internally, Hoshi
+stores AST node kinds as integers and also maintains a map from these integers to
+strings so client languages can retrieve the kind in either form.
+</p>
+
+<p>
+Most programming languages have a `switch' or computed branch statement and using
+that statement is the most convenient way to structure the node processing function.
+But in order to do that the client language must control the integer kind of the
+node. To enable that feature in client languages that include a switch, like C++, C# or
+Java, Hoshi will accept a map from string to integer in the parser generation function
+and use that map to control the integer associated with each node type. By using that
+feature the node processing routines can be quite succinct.
+</p>
+
+<p>
+In the final version of the arithemetic expression example we will combine everything
+we've covered in this section to evaluate expressions and produce a result. The
+widget which follows contains the sample program in all the Hoshi client languages. Those which have a
+switch statement initialize the ast kinds and use the switch to evaluate the tree and
+those which don't use string comparisons.
+</p>
+
+<script type="text/CodeSample">
+!! C++
+#include <iostream>
+#include "Parser.H"
+
+using namespace std;
+using namespace hoshi;
+
+const string grammar = R"!(
+    E ::= E '+' T     : (Plus, $1, $3)
+    E ::= E '-' T     : (Minus, $1, $3)
+    E ::= T
+    T ::= T '*' F     : (Times, $1, $3)
+    T ::= T '/' F     : (Divide, $1, $3)
+    T ::= F
+    F ::= <integer>   : (Number, &1)
+    F ::= '(' E ')'   : $2
+)!";
+
+enum AstKindType
+{
+    Number,
+    Plus,
+    Minus,
+    Times,
+    Divide
+};
+
+int eval(const Ast* root)
+{
+
+    switch (root->get_kind())
+    {
+
+        case AstKindType::Number: return stoi(root->get_lexeme());
+
+        case AstKindType::Plus:   return eval(root->get_child(0)) +
+                                         eval(root->get_child(1));
+
+        case AstKindType::Minus:  return eval(root->get_child(0)) -
+                                         eval(root->get_child(1));
+
+        case AstKindType::Times:  return eval(root->get_child(0)) *
+                                         eval(root->get_child(1));
+
+        case AstKindType::Divide: return eval(root->get_child(0)) /
+                                         eval(root->get_child(1));
+
+    }
+
+    cout << "Program error!" << endl;
+    exit(1);
+
+}
+
+int main() 
+{
+
+    map<string, int> kind_map;
+    kind_map["Number"] = AstKindType::Number;
+    kind_map["Plus"]   = AstKindType::Plus;
+    kind_map["Minus"]  = AstKindType::Minus;
+    kind_map["Times"]  = AstKindType::Times;
+    kind_map["Divide"] = AstKindType::Divide;
+
+    Parser parser;
+    try
+    {
+        parser.generate(grammar, kind_map);
+        parser.parse("25 - (2 + (3 + 4)) * 2");
+        cout << "Expression value: " << eval(parser.get_ast()) << endl;
+    }
+    catch (GrammarError& e)
+    {
+        cout << "Grammar errors:" << endl;
+        for (auto msg: parser.get_error_messages())
+        {
+            cout << msg.get_string() << endl;
+        }
+    }
+    catch (SourceError& e)
+    {
+        cout << "Source errors:" << endl;
+        for (auto msg: parser.get_error_messages())
+        {
+            cout << msg.get_string() << endl;
+        }
+    }
+        
+}
+!! Java
+//  Grammar file: ExampleTwo.G
+
+    E ::= E '+' T     : (Plus, $1, $3)
+    E ::= E '-' T     : (Minus, $1, $3)
+    E ::= T
+    T ::= T '*' F     : (Times, $1, $3)
+    T ::= T '/' F     : (Divide, $1, $3)
+    T ::= F
+    F ::= <integer>   : (Number, &1)
+    F ::= '(' E ')'   : $2
+
+//  Java file: ExampleTwo.java
+
+import java.lang.*;
+import java.util.*;
+import hoshi.*;
+
+public class ExampleTwo {
+
+    enum AstKindType
+    {
+        Number,
+        Plus,
+        Minus,
+        Times,
+        Divide
+    }
+
+    static AstKindType [] astKindTypeValues = AstKindType.values();
+
+    public static void main(String [] args) {
+
+        HashMap<String, Integer> kindMap = new HashMap<String, Integer>();
+
+        for (AstKindType astKindType: astKindTypeValues) {
+            kindMap.put(astKindType.name(), astKindType.ordinal());
+        }
+
+        Parser parser = null;
+        try {
+            parser = new Parser();
+            parser.generate(Parser.loadFile("ExampleTwo.G"), kindMap);
+            parser.parse("25 - (2 + (3 + 4)) * 2");
+            System.out.println("Expression value: " + eval(parser.getAst()));
+        } catch (GrammarError e) {
+            for (ErrorMessage m: parser.getErrorMessages()) {
+                System.out.println(m.getString());
+            }
+            Runtime.getRuntime().halt(1);
+        } catch (SourceError e) {
+            for (ErrorMessage m: parser.getErrorMessages()) {
+                System.out.println(m.getString());
+            }
+            Runtime.getRuntime().halt(1);
+        }
+
+    }
+
+    private static int eval(Ast root) {
+
+        switch (astKindTypeValues[root.getKind()]) {
+
+            case Number:
+
+                try {
+                    return Integer.parseInt(root.getLexeme());
+                } catch (NumberFormatException e) {
+                    System.out.println("Program error!");
+                    Runtime.getRuntime().halt(1);
+                    return 0;
+                }
+
+            case Plus:   return eval(root.getChild(0)) +
+                                eval(root.getChild(1));
+
+            case Minus:  return eval(root.getChild(0)) -
+                                eval(root.getChild(1));
+
+            case Times:  return eval(root.getChild(0)) *
+                                eval(root.getChild(1));
+
+            case Divide: return eval(root.getChild(0)) /
+                                eval(root.getChild(1));
+
+        }
+
+        System.out.println("Program error!");
+        Runtime.getRuntime().halt(1);
+        return 0;
+
+    }
+
+}
+!! C#
+using System;
+using System.Text;
+using System.Collections.Generic;
+using hoshi;
+
+public class ExampleTwo
+{
+
+    private const string grammar = @"
+        E ::= E '+' T     : (Plus, $1, $3)
+        E ::= E '-' T     : (Minus, $1, $3)
+        E ::= T
+        T ::= T '*' F     : (Times, $1, $3)
+        T ::= T '/' F     : (Divide, $1, $3)
+        T ::= F
+        F ::= <integer>   : (Number, &1)
+        F ::= '(' E ')'   : $2
+    ";
+
+    enum AstKindType : int
+    {
+        Number = 0,
+        Plus   = 1,
+        Minus  = 2,
+        Times  = 3,
+        Divide = 4
+    }
+
+    public static void Main()
+    {
+
+        Dictionary<string, int> kindMap = new Dictionary<string, int>();
+
+        for (int i = 0; i < Enum.GetValues(typeof(AstKindType)).Length; i++)
+        {
+            kindMap[Enum.GetValues(typeof(AstKindType)).GetValue(i).ToString()] =
+                (int)Enum.GetValues(typeof(AstKindType)).GetValue(i);
+        }
+
+        Parser parser = null;
+        try
+        {
+            parser = new Parser();
+            parser.Generate(grammar, kindMap);
+            parser.Parse("25 - (2 + (3 + 4)) * 2");
+            Console.WriteLine("Expression value: " + eval(parser.GetAst()));
+        }
+        catch (GrammarError)
+        {
+            foreach (ErrorMessage m in parser.GetErrorMessages())
+            {
+                Console.WriteLine(m.String);
+            }
+            Environment.Exit(1);
+        }
+        catch (SourceError)
+        {
+            foreach (ErrorMessage m in parser.GetErrorMessages())
+            {
+                Console.WriteLine(m.String);
+            }
+            Environment.Exit(1);
+        }
+
+    }
+
+    private static int eval(Ast root)
+    {
+
+        switch ((AstKindType)root.Kind) {
+
+            case AstKindType.Number:
+
+                int result;
+                if (Int32.TryParse(root.Lexeme, out result)) {
+                    return result;
+                }
+
+                Console.WriteLine("Program error!");
+                Environment.Exit(1);
+                return 0;
+
+            case AstKindType.Plus:   return eval(root.GetChild(0)) +
+                                            eval(root.GetChild(1));
+
+            case AstKindType.Minus:  return eval(root.GetChild(0)) -
+                                            eval(root.GetChild(1));
+
+            case AstKindType.Times:  return eval(root.GetChild(0)) *
+                                            eval(root.GetChild(1));
+
+            case AstKindType.Divide: return eval(root.GetChild(0)) /
+                                            eval(root.GetChild(1));
+
+        }
+
+        Console.WriteLine("Program error!");
+        Environment.Exit(1);
+        return 0;
+
+    }
+
+}
+!! Python
+import Hoshi
+
+GRAMMAR = '''
+    E ::= E '+' T     : (Plus, $1, $3)
+    E ::= E '-' T     : (Minus, $1, $3)
+    E ::= T
+    T ::= T '*' F     : (Times, $1, $3)
+    T ::= T '/' F     : (Divide, $1, $3)
+    T ::= F
+    F ::= <integer>   : (Number, &1)
+    F ::= '(' E ')'   : $2
+'''                  
+
+def eval(root):
+    if (parser.get_kind_string(root) == "Number"):
+        return int(root.get_lexeme())
+    elif (parser.get_kind_string(root) == "Plus"):
+        return eval(root.get_child(0)) + eval(root.get_child(1))
+    elif (parser.get_kind_string(root) == "Minus"):
+        return eval(root.get_child(0)) - eval(root.get_child(1))
+    elif (parser.get_kind_string(root) == "Times"):
+        return eval(root.get_child(0)) * eval(root.get_child(1))
+    elif (parser.get_kind_string(root) == "Divide"):
+        return eval(root.get_child(0)) / eval(root.get_child(1))
+    print("Program error!")
+    exit(1)
+
+parser = Hoshi.Parser()
+kind_map = {  "Number": 1,
+              "Plus":   2,
+              "Minus":  3,
+              "Times":  4,
+              "Divide": 5  }
+try:
+    parser.generate(GRAMMAR, kind_map)
+    parser.parse("25 - (2 + (3 + 4)) * 2")
+    print("Expression value: " + str(eval(parser.get_ast())))
+except Hoshi.GrammarError as e:
+    for message in parser.get_error_messages():
+        print(message.get_string())
+    exit(1)
+except Hoshi.SourceError as e:
+    for message in parser.get_error_messages():
+        print(message.get_string())
+    exit(1)
+</script>
+
+<h2>Summary</h2>
+
+<p>
+In this section we've gone rather quickly over the entire process of creating a
+parser using the Hoshi library. We've glossed over a lot of details as the goal was
+to reach a point quickly that you can begin experimenting. In the next section we'll
+cover grammars again in much more detail.
+</p>
+
+</section>
+
+<section id="GrammarDetails"><h1>Grammar Details</h1>
+
+<p>
+In the first section we briefly covered the use of Hoshi end-to-end, so that you are
+able to use it right away. But of necessity we left out a lot
+of details. In this section we'll cover grammars again but in more depth.
+</p>
+
+<h2>Conflicts</h2>
+
+<p>
+Previously we said that Hoshi uses BNF grammars to specify the language to be parsed.
+But unfortunately Hoshi can not generate parsers for all BNF grammars, only a subset.
+Now we want to look a bit at where the process will fail and what we can do about it.
+First we'll modify our example grammar removing a few rules
+</p>
+
+<code style="font-size: 12pt"><pre>
+    E ::= E '+' T 
+    E ::= E '-' T
+    T ::= T '*' F
+    T ::= T '/' F
+    F ::= &lt;integer&gt;
+    F ::= '(' E ')'
+</pre></code>
+
+<p>
+If you use this grammar in any of the sample programs we've shown so far the
+<code>GrammarError</code> exception will be thrown and you'll get this display on the
+console:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    Grammar errors:
+    ERROR: The following nonterminals are useless:
+
+      *accept*      E             T             
+</pre></code>
+
+<p>
+Hoshi says that three nonterminals are <i>useless</i>, which means they can't
+generate a string of terminals. In the case of <code>E</code> and <code>T</code>, each rule in
+which they appear on the left they also appear on the right, so there is no way to
+stop the recursion. The <code>*accept*</code> symbol is the start symbol generated by
+Hoshi. The only rule with that symbol on the left has the first nonterminal,
+<code>E</code> on the right and since <code>E</code> can not generate a string of
+terminals, neither can <code>*accept</code>.
+</p>
+
+<p>
+The set of rules in a grammar is similar to a set of recursive functions. There must
+be some way to stop the recursion over any reachable set of the rules.
+</p>
+
+<p>
+Now let's modify our grammar in a different way. Suppose we were recognizing a
+smaller set of expressions having only the addition operator. Since addition is
+associative we don't really care whether the expressions associate to the left or
+right so we try the following grammar:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    E ::= E '+' E
+    E ::= &lt;integer&gt;
+    E ::= '(' E ')'
+</pre></code>
+
+<p>
+Once again generating the generator throws the <code>GrammarError</code> exception and
+this time displays the following on the console:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    Grammar errors:
+    ERROR: The following state had conflicts
+
+      State 6
+      ---------------------------------------------------------------------
+      Incoming transition: 4
+
+      Item set:
+        E             ::= E . '+' E 
+        E             ::= E '+' E . 
+                      /   ')' '+' *eof* 
+
+      Actions:
+        ')'           Reduce: E ::= E '+' E
+        '+'           Shift: 4
+        '+'           Reduce: E ::= E '+' E
+        *eof*         Reduce: E ::= E '+' E
+</pre></code>
+
+<p>
+The root problem here is that this grammar is <i>ambiguous</i>. Grammars used to
+generate parsers must generate a unique concrete syntax tree for any sentence in the
+language. Consider what happens if we use this grammar on the expression         
+<code>1 + 2 + 3</code>. This sentence is clearly in the language, but the following
+two syntax trees are equally valid:
+</p>
+
+<div class="outer_block">
+<script type="text/TreeDiagram">
+:: height 250
+:: width 400
+[{
+
+    nodeStyles:
+    [
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 12pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "12pt serif"}],
+    ],
+    trees:
+    [
+        ["+",
+            ["2"],
+            ["+",
+                ["2"],    
+                ["3"]]],
+        ["+",
+            ["+",
+                ["1"],
+                ["2"]],
+            ["3"]]
+    ]
+
+}]
+</script>
+</div>
+
+<p>
+The parsers generated by Hoshi read the input stream from left to right looking for
+handles to rules that it can collapse. It will scan ahead in the input to try to
+resolve any conflicts, but with ambiguous grammars no amount of following context can
+resolve a conflict. 
+</p>
+
+<p>
+Unfortunately ambiguous grammars are not the only source of conflict. Hoshi is
+generally scanning the source looking for an action on each token. That action might
+be to push the next token on the stack, or if it has the handle for a rule on the
+stack the action might be to replace that handle by the left hand nonterminal. As
+it's looking for actions to take it scans ahead in the source just to determine the
+action. There is a facility to control how far ahead it will scan. This is specified
+in the grammar string in an <i>options</i> section. Take a look at the following
+example in which we tell Hoshi to use a 1-token lookahead.
+</p>
+
+<code style="font-size: 12pt"><pre>
+    options
+        lookaheads = 1
+    rules
+        List       ::= List KeyValues
+        List       ::= KeyValues
+        KeyValues  ::= <identifier> '=' Values Semicolon
+        Values     ::= Values <identifier>
+        Values     ::= <identifier>
+        Semicolon  ::= ';'
+        Semicolon  ::= empty
+</pre></code>
+
+<p>
+The grammar source actually has 3 sections:
+</p>
+<ol>
+<li>
+The options section contains control and option information. Anything not associated
+with a single grammar element but rather determines how the grammar elements are
+processed.
+</li>
+<li>
+The tokens section contains the specification of tokens, including regular
+expressions, guards and scan actions.
+</li>
+<li>
+The rules section contains the rules of the grammar.
+</li>
+</ol>
+
+<p>
+The only required section is rules, and if that's the only section we have the
+<code>rules</code> keyword is not required. That's all we've needed for the simple
+grammars we've seen so far. But now I want to control the lookahead so I need an
+options section.
+</p>
+
+<p>
+The language recognized by this grammar is a list of key-value assignments where the
+keys are identifiers and the values are lists of identifiers. We made semicolons
+between the assignments optional. Here is a short example sentence in the language:
+</p>
+
+<code style="font-size: 12pt"><pre>
+     lhsOne   = a b c;
+     lhsTwo   = d e f
+     lhsThree = g h i
+</pre></code>
+
+<p>
+When we insert this grammar into our test program once again the generator
+throws the <code>GrammarError</code> exception. And now we get the following
+displayed on the console:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    Grammar errors:
+    ERROR: The following state had conflicts
+
+      State 7
+      ---------------------------------------------------------------------
+      Incoming transition: 5
+
+      Item set:
+        KeyValues     ::= <identifier> '=' Values . Semicolon 
+        Values        ::= Values . <identifier> 
+        Semicolon     ::= . ';' 
+        Semicolon     ::= . 
+                      /   *eof* <identifier> 
+
+      Actions:
+        ';'           Shift: 10
+        *eof*         Reduce: Semicolon ::= *epsilon*
+        <identifier>  Shift: 8
+        <identifier>  Reduce: Semicolon ::= *epsilon*
+        Semicolon     Goto: 9
+</pre></code>
+
+<p>
+The problem here is an inadequate lookahead. When Hoshi sees an indentifier it
+doesn't know whether it's a right hand side symbol or the start of the next
+assignment. But we know that an <code>=</code> must follow each left hand symbol so
+we can fix this by extending the lookahead as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    options
+        lookaheads = 2
+    rules
+        List       ::= List KeyValues
+        List       ::= KeyValues
+        KeyValues  ::= <identifier> '=' Values Semicolon
+        Values     ::= Values <identifier>
+        Values     ::= <identifier>
+        Semicolon  ::= ';'
+        Semicolon  ::= empty
+</pre></code>
+
+<p>
+With this modification the grammar works fine.
+</p>
+
+<h2>Conflict Resolution Tactics</h2>
+
+<p>
+Handling conflicts in the grammar is unpleasant, but they don't happen quite as often
+as might be feared. Here we want to provide a few tips on preventing and handling
+them.
+</p>
+
+<p>
+The best tip I can give is to develop grammars incrementally, a very small piece at
+a time. That way if problems develop you have a clear idea where to look. For
+example, suppose you want a parser for a language which contains a list of functions
+where each function consists of a header, local declarations and a body. We can start
+by including the list nonterminals but create dummy terminals for the components,
+something like this:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List       ::= List Function
+    List       ::= Function
+    Function   ::= 'header' 'declarations' 'body'
+</pre></code>
+
+<p>
+This lets you test the list-building rules right away. When that works
+expand one of the dummy tokens, something like this:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List       ::= List Function
+    List       ::= Function
+    Function   ::= Header'declarations' 'body'
+    Header     ::= 'function' <identifier> '(' 'formal_list' ')'
+</pre></code>
+
+<p>
+Here <code>formal_list</code> is another dummy token but the rest is real. We can
+continue in this way replacing dummy tokens by real syntax until we finish the
+grammar. This sort of incremental development will be very familiar to any
+programmer, but in developing grammars it is even more important than it is in
+developing programs. Until you become proficient you may want to use very small increments.
+</p>
+
+<p>
+The next tip is to play around with the lookahead. Hoshi allows you to specify any
+lookahead length you want, although you should probably stay with relatively short
+lookaheads. Generally real programming languages use very short lookaheads, typically
+a single token. But those languages tend to be very carefully designed and they allow
+recursive structures many places. DSL's are somewhat different. The languages are
+simpler with fewer recursive elements and less punctuation. A longer lookahead is
+more likely to be useful in a DSL.
+</p>
+
+<p>
+As a basis for comparison, the Hoshi grammar uses 4 lookaheads and DateTime example
+in the distribution also uses 4, so obviously I don't try very hard to avoid longer
+lookaheads. The disadvantage of
+using longer lookaheads is somewhat less accuracy in error recovery and difficulty in
+writing guard expressions in the scanner. But these are minor problems when the
+lookaheads make a grammar work.
+</p>
+
+<p>
+The default value Hoshi uses for lookaheads is 2, as that strikes a pretty good balance between
+error recovery ability and language coverage. If you are getting conflicts you might
+try bumping that up a lot, say to 10. If that works then move it back down to the
+smallest number that works.
+</p>
+
+<p>
+Another option is to tell Hoshi to accept some number of conflicts. If you do that
+Hoshi will check that you have accurately specified the number of conflicts and if so
+it will resolve them by choosing shift actions over reduce for shift-reduce conflicts
+and take shorter rules over longer ones for reduce-reduce conflicts. You can make
+this specification in the options, as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    options
+        conflicts = 2
+</pre></code>
+
+<p>
+This would specify that we expect 2 conflicts in the grammar. This feature was
+included because other parser generators have it, but I don't recommend using it. You
+have to really understand the parsing automaton well to feel comfortable with it and
+there are bound to be better ways to resolve the conflicts.
+</p>
+
+<p>
+If none of these tips help then you'll probably have to dig into the theory. I'm
+not going to cover that theory here as it's already been done better than I would be
+able.
+The best-regarded text on the topic is "Compilers: Principles, Techniques, and Tools"
+by Aho, Lam, Sethi and Ullman (a.k.a. The Dragon Book). You can find it at
+<a href="http://www.amazon.com/Compilers-Principles-Techniques-Tools-Edition/dp/0321486811/ref=sr_1_1?ie=UTF8&qid=1391516771&sr=8-1&keywords=compilers+principles+techniques+and+tools">
+Amazon</a>, <a href="http://www.informit.com/store/compilers-principles-techniques-and-tools-9780321486813">
+InformIT</a> or most other academic or technical bookstores.
+</p>
+
+<p>
+If you don't want to buy a text there are lots of
+course notes for compiler design courses on the web and pretty much any of them will
+cover it in some detail.
+</p>
+
+<p>
+If you decide to do further study you should know that Hoshi uses the LALR(<i>k</i>) parsing
+methodology. You'll find descriptions for a <i>lot</i> of other methodologies. We
+chose LALR(<i>k</i>) because the rules it accepts are are similar to the AST nodes we
+want to create and that makes the tree-building expressions easy to write.
+</p>
+
+<h2>Tree Building Details</h2>
+
+<p>
+In the first section we gave a brief brief introduction to the expressions for
+building ASTs and now we want to cover it in more detail. The general principle is as we
+described before but there are quite a few more options. Remember that a single node
+in an AST consists of the following pieces.
+</p>
+
+<ul>
+<li>
+The kind of node.
+</li>
+<li>
+The location in the source corresponding to the node.
+</li>
+<li>
+The lexeme for literals and identifiers.
+</li>
+<li>
+A list of child nodes.
+</li>
+</ul>
+
+<p>
+The goal of the tree building expression is to take the subtrees associated with the
+right hand side of a rule and build a subtree associated with the left hand side. To
+illustrate this let's take an example grammar which accumulates lists of simple
+expressions. Here is the grammar:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List       ::= ExprList ',' Expr
+    List       ::= Expr
+    Expr       ::= Expr '+' Term
+    Expr       ::= Term
+    Term       ::= &lt;integer&gt;
+    Term       ::= '(' Term ')'
+</pre></code>
+
+<p>
+Assume we have included the appropriate tree-building expressions, but we're not
+going to show them. What we want to look at is a possible configuration of the parse
+when we are about to reduce by the first rule. At that point we should have subtrees
+associated with the right hand side available, something like this:
+</p>
+
+<div class="outer_block">
+<script type="text/TreeDiagram">
+:: height 250
+:: width 400
+[{
+
+    nodeStyles:
+    [
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 12pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "12pt serif"}],
+    ],
+    trees:
+    [
+        ["List",
+            ["+",
+                ["1"],
+                ["+",
+                    ["2"],    
+                    ["3"]]],
+            ["4"]],
+        [","],
+        ["+",
+            ["+",
+                ["5"],
+                ["6"]],
+            ["7"]]
+    ]
+
+}]
+</script>
+</div>
+
+<p>
+This would correspond to the following input source, where we are about to reduce for
+the final time.
+</p>
+
+<code style="font-size: 12pt"><pre>
+    1 + (2 + 3) , 4 , 5 + 6 + 7
+</pre></code>
+
+<p>
+We're going to use this example in several scenarios to illustrate tree-building
+expression. To review, the tree building expression comes just after a rule following
+a colon. We're going to attach it to the following rule in the position indicated:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= ExprList ',' Expr : <i>TreeExpression</i>
+</pre></code>
+
+<p>
+The <i>TreeExpression</i> takes one of two forms:
+<ul>
+<li>
+A <code>$</code> followed by a position selector.
+</li>
+<li>
+A parenthesized list of node elements
+</li>
+</ul>
+<p>
+The node elements take one of the following forms:
+</p>
+
+<ul>
+<li>
+An identifier specifying the kind of node.
+</li>
+<li>
+A <code>%</code> followed by a position selector indicating the kind of node.
+</li>
+<li>
+A <code>@</code> followed by a position selector indicating the location of the node.
+</li>
+<li>
+A <code>@</code> followed by a text string indicating a literal location.
+</li>
+<li>
+A <code>&</code> followed by a position selector indicating the lexeme of the node.
+</li>
+<li>
+A <code>&</code> followed by a text string indicating a literal lexeme.
+</li>
+<li>
+A <code>$</code> followed by a position selector indicating a child of the node.
+</li>
+<li>
+A parenthesized list of node elements indicating a child of the node.
+</li>
+</ul>
+
+<p>
+The parenthesized lists can contain 0 or one of the kind, location or lexeme
+indicators and 0 or more of the child indicators. If no kind is provided the left
+hand symbol is used. If no location or lexeme is indicated the first node of the rule
+is used.
+</p>
+
+<p>
+Note that our definition is recursive in the parenthesized lists so we can manually
+specify a tree to any depth if we want. It's extremely uncommon, however, to build more than
+two levels of the tree with parenthesis.                     
+</p>
+
+<p>
+The position selector is used to specify the location of a subtree. The general form
+is a dotted integer expression where each integer indicates a child number. The first
+integer specifies a subtree associated with a right hand side symbol in the rule we
+are using to reduce and the following integers specify children in the next level of
+that subtree. If you look at the following example expressions and their values in
+our example rule above this should become clear:
+</p>
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Expression</th><th class="boxed">Node</th></tr>
+<tr class="boxed"><td class="boxed"><code>$1</code></td><td class="boxed"><i>List</i></td></tr>
+<tr class="boxed"><td class="boxed"><code>$1.1.2.1</code></td><td class="boxed"><i>2</i></td></tr>
+<tr class="boxed"><td class="boxed"><code>$3.2</code></td><td class="boxed"><i>7</i></td></tr>
+</table>
+
+<p>
+Each of the integers in a position selector can work either from the left or the
+right. Positive integers count from the left, and negative integers count from the
+right. In addition there is a slice expression that only works in the last entry and
+only for child nodes (not kind, location or lexeme) expressions. A slice expression
+consists of a beginning and end position with an underscore in between. If either
+position is missing it defaults to the first or last position respectively. Once
+again a few examples should make this clear:
+</p>
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Expression</th><th class="boxed">Meaning</th></tr>
+<tr class="boxed"><td class="boxed"><code>$1._</code></td><td class="boxed">All the children of the first subtree</td></tr>
+<tr class="boxed"><td class="boxed"><code>$1.2_</code></td><td class="boxed">The second through the last child of the first subtree</td></tr>
+<tr class="boxed"><td class="boxed"><code>$1.2_-2</code></td><td class="boxed">All children of the first subtree except the first
+and last</td></tr>
+</table>
+
+<p>
+Now that we know all the rules it's pretty easy to see how to write the tree building
+expression for our example:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= ExprList ',' Expr : (List $1._ $3)
+</pre></code>
+
+<p>
+This expression builds a subtree which has a type of <i>List</i> and 3 child nodes,
+the two children of the first subtree and the last subtree. The location and lexeme
+will come from the first child. So our final AST will look like this:
+</p>
+
+<div class="outer_block">
+<script type="text/TreeDiagram">
+:: height 280
+:: width 400
+[{
+
+    nodeStyles:
+    [
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 12pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "12pt serif"}],
+    ],
+    trees:
+    [
+        ["List",
+            ["+",
+                ["1"],
+                ["+",
+                    ["2"],    
+                    ["3"]]],
+            ["4"],
+            ["+",
+                ["+",
+                    ["5"],
+                    ["6"]],
+                ["7"]]]
+    ]
+
+}]
+</script>
+</div>
+
+<h2>BNF Extensions</h2>
+
+<p>
+Hoshi offers a few features from <i>Extended Backus-Naur Form (EBNF)</i> that make it
+much easier to write grammars. The first of these is the notion of <i>grouping</i>.
+You can put a sequence of right hand side symbols in parentheses which makes other
+operators work on the entire group. As an example let's use the following rule:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= List ( ',' Expr )
+</pre></code>
+
+<p>
+The default tree building for a rule like this is to collect the group into a single
+subtree contains subtrees for each symbol in the parenthesis. So just before we
+reduce by this rule the parse stack should look like this:
+</p>
+
+<div class="outer_block">
+<script type="text/TreeDiagram">
+:: height 130
+:: width 300
+[{
+
+    nodeStyles:
+    [
+        [/[a-zA-Z]+/, {font: "i", style: "open", jfont: "italic 12pt serif"}],
+        [/.*/,        {font: "rm", style: "open", jfont: "12pt serif"}],
+    ],
+    trees:
+    [
+        ["List"],
+        ["List.1",
+            [","],
+            ["Expr"]]
+    ]
+
+}]
+</script>
+</div>
+
+<p>
+Note that the AST kind of the subtree associated with the group will be
+synthesized from the left hand side of the rule. This is unlikely to be useful so
+normally we would override this tree building expression. You can place a tree
+building expression inside a parenthesized group at the end. So if we would like this
+group to yield the <code>Expr</code> tree we can use a rule like this:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= List ( ',' Expr : $2)
+</pre></code>
+
+<p>
+Grouping by itself is pretty useless, but when combined with <i>repetition
+operators</i> they can be very useful. The following postfix operators are available:
+</p>
+
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Operator</th><th class="boxed">Operation</th></tr>
+<tr class="boxed"><td class="boxed"><code>?</code></td><td class="boxed">Zero or one of the operand</td></tr>
+<tr class="boxed"><td class="boxed"><code>*</code></td><td class="boxed">Zero or more of the operand</td></tr>
+<tr class="boxed"><td class="boxed"><code>+</code></td><td class="boxed">One or more of the operand</td></tr>
+</table>
+
+<p>
+The trees associated with each of these is a node having a synthesized kind value
+(like the groups) followed by a list of the children it found. With these operators
+we can give a concise rule to collect a comma-separated list of expressions:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= Expr ( ',' Expr : $2 )* : (ExprList $1 $2._)
+</pre></code>
+
+<p>
+This rule recognizes a list where one <code>Expr</code> is required and that can be
+followed by any number of additional expressions separated by commas. There are
+fairly easy modifications of this rule for most sorts of lists that appear in
+grammars. For example, suppose we want to allow an optional comma at the end of lists
+(Python and others use this syntax). That can be done as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= Expr ( ',' Expr : $2 )* ','? : (ExprList $1 $2._)
+</pre></code>
+
+<p>
+The combination of grouping and repetition operators simplify a lot of structures by
+removing recursion and replacing it with iteration. You need to be aware however that
+this is purely syntactic sugar. Hoshi will preprocess these expressions into simple
+BNF rules before generating a parser. As a result, if one of these expressions is
+involved in a conflict the rule you will see in that conflict won't be exactly the
+one written in the grammar. In practice this isn't a problem and in fact you're more
+likely to write correct rules using the extensions, but if you <i>do</i> have a conflict
+among these rules it can help to rewrite the grammar using pure BNF.
+</p>
+
+<p> 
+In addition to the postfix operators we have an infix choice operator,
+<char>|</char>, which matches what occurs on either side of the operator. The range
+of the match extends to the beginning and end of the rule or to enclosing parentheses
+if there are any. Take a look at the following two rules as an example:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    NT1  ::= NT2 NT3 | NT4 NT5
+    NT6  ::= NT7 ( NT8 | NT9 ) NT10
+</pre></code>
+
+<p> 
+This is equivalent to the following (notice the grouping):
+</p>
+
+<code style="font-size: 12pt"><pre>
+    NT1  ::= NT2 NT3
+    NT1  ::= NT4 NT5
+    NT6  ::= NT7 NT11 NT10
+    NT11 ::= NT8
+    NT11 ::= NT9
+</pre></code>
+
+<h2>Null Rules</h2>
+
+<p>
+Many languages contain optional elements, like the <code>options</code> section in
+Hoshi grammars. These are usually given concisely with the <code>?</code> operator,
+but you can also give rules with a null list on the right hand side. To create such a
+rule the keyword <code>empty</code> is used on the right. As an example, the
+following pair of rules describe a list of zero or more <code>Expr</code>s:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= List Expr
+    List ::= empty
+</pre></code>
+
+<p>
+The <code>empty</code> keyword is just a syntax element, not a symbol. There is no subtree
+associated with the symbol. So the default subtree associated with the second rule is
+a single node with a kind of <code>List</code> and no children.
+</p>
+
+</section>
+
+<section id="TokenDetails"><h1>Token Details</h1>
+
+<p>
+To this point we haven't covered token definition very much. In fact, one of the
+goals of Hoshi is to make token definition as automatic as possible. Ideally we
+should be able to give a list of rules annotated with tree-building expressions and
+generate a parser from that alone. But that isn't always possible. In fact most
+nontrivial languages will have at least one token definition to describe comments.
+And many languages will have at least a couple of tokens that Hoshi doesn't provide.
+In this section we'll cover the explicit description of tokens to handle those
+cases.
+</p>
+
+<h2>Regular Expressions</h2>
+
+<p>
+All tokens are recognized in a Hoshi parsing engine using a <i>Deterministic Finite
+Automaton (DFA)</i>, which is just the abstract machine used to match regular expressions. The
+DFA is generated from regular expressions associated with each token. To start
+filling this out, let's suppose we have a language in which <code>xxx</code> is an
+operator. For something this simple we can just use <code>'xxx'</code> in the rules,
+but let's provide an explicit description so we can begin showing how it's done.
+Let's suppose our language consists of just that keyword. We can provide a grammar
+for that language as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;xxx&gt; : regex = 'xxx'
+    rules
+        Program ::= &lt;xxx&gt;
+</pre></code>
+
+<p>
+The general form of the tokens section is the keyword <code>tokens</code> followed by
+a list of token specifications. There are a number of clauses that can appear here
+but the most common and most useful is the regular expression specification, which is
+given here as <code>'xxx'</code>. The regular expressions themselves are enclosed in
+quotes, but one, two or three quotes can be used. So the following three
+specifications are equivalent:
+</p>
+
+<code style="font-size: 12pt"><pre>
+        &lt;xxx&gt; : regex = 'xxx'
+        &lt;xxx&gt; : regex = "xxx"
+        &lt;xxx&gt; : regex = '''xxx'''
+</pre></code>
+
+<p>
+The most common way to do this is with the triple-quoted string because that is
+unlikely to conflict with the regular expression itself. Whitespace within these
+expressions is ignored including newlines, so you can have quite long expressions
+without difficulty.
+</p>
+
+<p>
+Other than whitespace being permitted, the regular expression language is quite
+conventional. We're going to assume regular expressions themselves are familiar so
+we'll briefly list the regular expression syntax and move on to a larger example.
+Here's a table of the operators provided:
+</p>
+
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Operator</th><th class="boxed">Operation</th></tr>
+
+<tr class="boxed"><td class="boxed"><code>(</code> ... <code>)</code></td>
+<td class="boxed">Parentheses surround a group. Any postfix operators apply to the group as a unit.</td></tr>
+
+<tr class="boxed"><td class="boxed"><code>?</code></td><td class="boxed">Zero or one of the operand</td></tr>
+<tr class="boxed"><td class="boxed"><code>*</code></td><td class="boxed">Zero or more of the operand</td></tr>
+<tr class="boxed"><td class="boxed"><code>+</code></td><td class="boxed">One or more of the operand</td></tr>
+
+<tr class="boxed"><td class="boxed"><code>|</code></td>
+<td class="boxed">This is an infix operator where either the left or
+right operand will match. This operator extends either to the beginning and end of
+the expression, or to the beginning and end of a group if it's inside a group.</td></tr>
+
+</table>
+
+<p>
+There are a number of special symbols or sequences that represent a set of
+characters:
+</p>
+
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Operator</th><th class="boxed">Operation</th></tr>
+
+<tr class="boxed"><td class="boxed"><code>.</code></td><td class="boxed">This is a wildcard. It matches any single character.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\s</code></td><td class="boxed">Matches any whitespace character.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\S</code></td><td class="boxed">Matches any non-whitespace character.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\d</code></td><td class="boxed">Matches any digit character.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\D</code></td><td class="boxed">Matches any non-Digit character.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\b</code></td><td class="boxed">Matches the space character. Note that this is
+required since whitespace is ignored in regular expressions.</td></tr>
+<tr class="boxed"><td class="boxed"><code>$</code></td><td class="boxed">Matches a newline.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\n</code></td><td class="boxed">Also matches a newline.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\r</code></td><td class="boxed">Matches a carriage return.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\\</code></td><td class="boxed">Matches a backslash.</td></tr>
+<tr class="boxed"><td class="boxed"><code>\</code>c</td><td class="boxed">Escapes the <i>c</i> character so that operators can
+be used as characters. This works with
+    <code>.</code>,
+    <code>?</code>,
+    <code>+</code>,
+    <code>*</code>,
+    <code>|</code>,
+    <code>^</code>,
+    <code>-</code>,
+    <code>(</code>,
+    <code>)</code>,
+    <code>[</code>,
+    <code>]</code>,
+    <code>{</code> or
+    <code>}</code>.
+</td></tr>
+</table>
+
+<p>
+Hoshi also recognizes explicit character sets enclosed in square brackets. These
+contain a list of ranges, which look like b<code>-</code>e, where all characters
+from b to e are in the set. If the first character is a caret (<code>^</code>) the
+expression is inverted.
+</p>
+
+<p>    
+All of these should be pretty familar if you've used regular expressions before. If
+not there are a number of resources that describe them in great detail. Now let's
+give a more useful example. Hoshi provides an <code>&lt;integer&gt;</code> token
+already which works in most situations, but suppose we want something fancier. In
+Ada, one is allowed to place underscore characters in numeric literals where you
+would normally put commas. Let's do that, but make them mandatory in our language. So
+for less than 4 digits there need be no underscore but for more than that we need
+underscores to group digits. We can use an expression like this:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;integer&gt; : regex = ''' \d | \d\d | \d\d\d | \d\d\d\d |
+                                ( \d | \d\d ) ( _ \d\d\d )+ '''
+</pre></code>
+
+<p>
+As another example let's take the triple-quoted strings such as those we use for
+regular expressions:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;triplestring&gt; : regex = "''' ( [^'] | '[^'] | ''[^'] )* '''"
+</pre></code>
+
+<p>
+Once you've defined a token like this you just use the name
+(<code>&lt;integer&gt;</code> or <code>&lt;triplestring&gt;</code> respectively) just
+as we've been using the built-in tokens so far. Notice that there is no issue
+redefining the <code>&lt;integer&gt;</code> symbol, any you define yourself will
+replace the Hoshi library token.
+</p>
+
+<h2>Comments</h2>
+
+<p>
+Most languages include comments of some kind and these are generally handled in the
+scanner, before they get to the parser. Hoshi has a mechanism to do the same thing.
+What we do is define a token as usual but include an extra clause to specify that
+those tokens should be ignored:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;comment&gt; : regex = ''' // [^\\n]* '''
+                    ignore = true
+</pre></code>
+
+<p>
+This creates a dummy token called <code>&lt;comment&gt;</code> which does <i>not</i>
+correspond to a terminal in the language but is completely ignored. You can use this
+to ignore any structure you don't want to be considered by the grammar rules.
+</p>
+
+<h2>Token Conflicts</h2>
+
+<p>
+Just as you can have conflicts in the rules of a grammar, it's also possible to have
+conflicts in the token definitions. This occurs when a string could be accepted by
+the regular expressions of two or more tokens. As an obvious example, consider a
+language that had an identifier symbol and the keyword <code>for</code>:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;identifier&gt; : regex = ''' [A-Za-z][A-Za-z0-9_]* '''
+        &lt;for&gt;        : regex = ''' for '''
+</pre></code>
+
+<p>
+The problem here is that the string <code>for</code> would be accepted by both
+<code>&lt;identifier&gt;</code> and the <code>for</code> keyword. We could provide a long expression that explicitly
+excluded keywords from identifiers but that would be quite tedious. So instead Hoshi
+associates a <i>precedence</i> with each token. When a conflict is found if there is
+a single token with highest precedence that token is used. The precedence is an
+integer which has a default value of 100. You can arrange these precedences to
+resolve the conflicts for you. To this end the library definition of
+<code>&lt;identifier&gt;</code> looks like this:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;identifier&gt; : regex = ''' [A-Za-z][A-Za-z0-9_]* '''
+                       precedence = 50
+</pre></code>
+
+<p>
+Keywords are generally declared automatically, just by including a single quoted
+string as the name. These are created by default with precedence of 100 and
+identifiers have a precedence of 50, so the class identifier explicitly excludes
+keywords.
+</p>
+
+<h2>Explicit Error Tokens</h2>
+
+<p>
+Hoshi will recognize both scanner and parser errors and do quite a good job of
+recovering from each. But sometimes one would like a better error message than Hoshi
+provides. A particularly annoying example is unterminated string literals. Suppose we
+have the following definition of a string:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;string&gt; : regex = ''' ' ( \\ [^\n] | [^'\\\n] )* ' '''
+</pre></code>
+
+<p>
+This recognizes single quoted strings that do <i>not</i> span a newline. But then
+what happens if the source contains a string with a missing closing quote? The error
+will be recognized at a newline but Hoshi will only delete the opening quote and will
+likely emit extra messages. The way to prevent this is to create a dummy token with
+an error Hoshi can provide when the token matches, as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;string&gt;      : regex = ''' ' ( \\ [^\n] | [^'\\\n] )* ' '''
+        &lt;stringerror&gt; : regex = ''' ' ( \\ [^\n] | [^'\\\n] )* \n '''
+                        error = "Missing closing quote on string literal"
+</pre></code>
+
+<p>
+This matches everything from a single quote up to a newline, emits the error and
+removes the whole matching string.
+</p>
+
+<h2>Lexemes</h2>
+
+<p>
+The bulk of a string in most languages consists of keywords and punctuation which do
+not vary in content so the text of the token, or the lexeme, has no useful
+information. For that reason by default we leave the lexeme associated with such
+tokens blank. But you can override that. If for some reason you want the keyword
+<code>for</code> to place the lexeme of the token in the generated ast, you can
+override the default definition of the keyword as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        'for' : regex = ''' for '''
+                lexeme = true
+</pre></code>
+
+<p>
+Something to note here: A single quoted string as used in the rules is just the name
+of the token and can be used in the token section as well. It's just a convention
+that we use identifiers in angle brackets for tokens that we explicitly describe and
+quoted strings for automatically generated ones. In the end both are just token names
+and are interchangable.
+</section>
+
+<h2>Guards and Actions</h2>
+
+<p>
+Guards provide a way to alter the DFA used to recognize tokens in certain situations.
+This occurs in a number of languages with contextual keywords. Suppose we want to
+have the keyword <code>yield</code> which is only a keyword between
+<code>coroutine</code> and <code>endcoroutine</code>. Outside of that block
+<code>yield</code> would just be a normal identifier. We can handle this with guards
+as follows:
+</p>
+      
+<code style="font-size: 12pt"><pre>
+    tokens
+        'yield'        : regex = [ in_coroutine ] => ''' yield '''
+        'coroutine'    : action = [ in_coroutine := in_coroutine + 1; ]
+        'endcoroutine' : action = [ in_coroutine := in_coroutine - 1; ]
+</pre></code>
+
+<p>
+Syntactically guards are boolean expressions inside square brackets that precede
+regex expressions and token actions are statement lists in square brackets in the
+action clause. When a token is recognized any actions associated with the token will
+be executed. The results of those actions can be used in guard expressions later to
+enable or disable regex patterns.
+</p>
+
+<p>
+Any identifier can be used as a variable in actions and guards. They are initialized
+to zero at the start of a parse. The operators available are the arithmetic operators
+<code>+</code>, <code>-</code>, <code>*</code> and <code>/</code>; the comparison
+operators <code>=</code>, <code>/=</code>, <code>&lt;</code>, <code>&lt;=</code>,
+<code>&gt;</code> and <code>&gt;=</code>; and the logical operators <code>&amp;</code>
+and <code>|</code>. Assignments are done with the operator <code>:=</code>. These
+operators are mostly drawn from Ada. They have conventional precedence and
+associativity rules.
+</p>
+
+<p>
+There is one pre-defined variable, <code>token_count</code>, which can not be
+assigned in actions but is incremented by Hoshi as each token is scanned. This can be
+used to change state temporarily without closing symbols.
+</p>
+
+<p>
+In addition to actions in token definitions Hoshi also allows actions to occur during
+reduce actions. These are specified in the rules after the tree-building expressions,
+as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    List ::= Expr ( ',' Expr : $2 )* ','? : (ExprList $1 $2._)
+                                          : [finished_list := 1;] 
+</pre></code>
+
+<p>
+The syntax is identical to the action clauses in the token section.
+</p>
+
+<p>
+Using actions and guards is somewhat of a last resort. If the desired language can be
+described without them we are better off. This is primarily because of the
+degradation of error recovery. Once the parser hits the first syntax error it's
+behavior changes. In particular, it <i>stops</i> building trees or processing actions
+attached to rules. This is because it can no longer rely on the stack contents. If
+the scanner is depending on actions in the reduce actions it is likely to flag
+spurious errors.
+</p>
+
+<p>
+Actions attached to tokens are less damaging but not harmless. Consider our
+<code>yield</code> example above. If the user misspells <code>coroutine</code> the
+nesting of coroutines will be thrown off and the scanner will mishandle all the
+<code>yield</code> symbols for the rest of the program.
+</p>
+
+<p>
+In spite of the drawbacks, if actions and guards are the only way to define a parser,
+then go ahead and use it. Remember that the <i>first</i> error in input source is not
+affected, only subsequent ones. It isn't fatal and in fact most parsing techniques do
+a far worse job of recovery than Hoshi so users don't completely trust error
+messages after the first one anyway.
+</p>
+
+<h2>Library Tokens</h2>
+
+<p>
+Hoshi has a collection of library tokens for common patterns. When it comes across a
+token reference that it can not resolve it first checks the library and if it finds
+it there the library token is imported. This lets you use a number of common token
+types without defining them. Here is a list of those library tokens:
+</p>
+
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Token</th><th class="boxed">Description</th></tr>
+
+<tr class="boxed"><td class="boxed"><code>&lt;c_comment&gt;</code></td><td class="boxed">Comments in the form /* ... */. These can span
+multiple lines but do not nest.</td></tr>
+<tr class="boxed"><td class="boxed"><code>&lt;slash_comment&gt;</code></td><td class="boxed">Comments in the form // ...</td></tr>
+<tr class="boxed"><td class="boxed"><code>&lt;cpp_comment&gt;</code></td><td class="boxed">C comment or slash comment.</td></tr>
+<tr class="boxed"><td class="boxed"><code>&lt;integer&gt;</code></td><td class="boxed">Integer number.</td></tr>
+<tr class="boxed"><td class="boxed"><code>&lt;float&gt;</code></td><td class="boxed">Floating point number.</td></tr>
+<tr class="boxed"><td class="boxed"><code>&lt;number&gt;</code></td><td class="boxed">Integer or float.</td></tr>
+<tr class="boxed"><td class="boxed"><code>&lt;identifier&gt;</code></td><td class="boxed">C++ style identifier.</td></tr>
+</table>
+
+<p>
+There are three ways you can use these tokens in your own tokens. The simplest and
+most direct is to use the token name directly in your rules. We've done this many
+times with the <code>&lt;integer&gt;</code> token. The second way to use these tokens
+is to use them in a <code>template</code> clause, as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;mycomment&gt; : template = &lt;cpp_comment&gt;
+</pre></code>
+
+<p>
+This clause states that your language will use C++ style comments. The
+<code>template</code> clause imports the entire definition of the stated library
+token as your token. This clause is always processed first regardless of the order
+listed which means it really resets the default values of all the token options but
+leaves you free to override any of them. Most grammars will use one of these clauses
+to define comments. Comment definitions don't appear in the rules section of your
+grammar so this is the only way to pull library definition of comments into your
+grammar.
+</p>
+
+<p>
+The final way to use library tokens in your grammar is as a regex macro. Within a
+regular expression you can use the library token name within braces as a term in your
+own expression. As an example of this, here is the definition of
+<code>&lt;cpp_comment&gt;</code>:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;cpp_comment&gt; : regex = ''' {c_comment} | {slash_comment} '''
+                        ignore = true
+</pre></code>
+
+<h2>Generated Tokens</h2>
+
+<p>
+In addition to library tokens Hoshi provides generated tokens which are used to
+handle most keywords and punctuation. When Hoshi sees a token reference in the rules
+it first checks if the token has been defined and if so it uses that definition. If
+it hasn't been defined it looks in the library and if it finds the token there it
+uses that. If it doesn't find it either place it defines the token from the name.
+</p>
+
+<p>
+Hoshi generates the regular expression for generated tokens by taking the literal value inside
+quotes, escaping where necessary. So if you would like a single asterisk as a token, you
+can use <code>'*'</code>, not <code>'\*'</code>. The second form would match
+backslash, asterisk rather than just asterisk.
+</p>
+
+<p>
+Some older languages, like BASIC or FORTRAN, use case <i>insensitive</i> keywords. By
+default, Hoshi will generate case <i>sensitive</i> patterns. So the pattern generated
+for <code>'hello'</code> would match <code>hello</code>, but not <code>Hello</code>.
+If you would like to generate case insensitive regular expressions you have to
+specify that in the options, as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    options
+        case_sensitive = false
+    rules
+        P ::= 'hello'
+</pre></code>
+
+<p>
+This grammar would recognize <code>Hello</code> and any other capitalization form.
+</p>
+
+<h2>Whitespace</h2>
+
+<p>
+Most languages ignore whitespace between tokens allowing the user to arrange his code
+any way he wants, and that is the default in Hoshi. If you do not want Hoshi to
+automatically ignore whitespace you can specify that in the options, as follows:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    options
+        keep_whitespace = true
+</pre></code>
+
+<p>
+I would recommend you not use this for large langauges, just small ones on the order
+of regular expressions. It can get a bit tricky to filter out whitespace in the
+rules.
+</p>
+
+<h2>Summary</h2>
+
+<p>
+Hoshi has a rich set of facilities for specifying tokens but in fact the goal was
+that grammars for most languages contain no token section at all. It comes quite
+close to achieving that goal, but even many DSL's should contain some kind of comment
+and Hoshi doesn't provide that with no syntax. A quite reasonable token section for a
+small language might look like this:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    tokens
+        &lt;mycomment&gt; : template = &lt;slash_comment&gt;
+</pre></code>
+
+<p>
+This would give you C++ style comments (using //) without the older C style comments. 
+</p>
+
+</section>
+
+<section id="ClientApi"><h1>The Client API</h1>
+
+<p>
+In prior sections we've covered all the features of grammar source, next we describe
+the client language API. Since Hoshi is implemented as a library it can support
+multiple client languages. As I write this Hoshi supports C++, Java, C# and Python.
+The differences in the API are not very significant so in many cases we will show
+code in only one of the languages.
+</p>
+
+<h2>Source Strings</h2>
+
+<p>
+Hoshi accepts multi-line strings for grammars and the source to be parsed. The
+strings use the most natural form in the client language, which is:
+</p>
+
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Language</th><th class="boxed">Type</th><th class="boxed">Encoding</th></tr>
+<tr class="boxed"><td class="boxed">C++</td><td class="boxed">std::string</td><td class="boxed">UTF-8</td></tr>
+<tr class="boxed"><td class="boxed">Java</td><td class="boxed">java.lang.String</td><td class="boxed">UTF-16</td></tr>
+<tr class="boxed"><td class="boxed">C#</td><td class="boxed">System.String</td><td class="boxed">UTF-16</td></tr>
+<tr class="boxed"><td class="boxed">Python</td><td class="boxed">string</td><td class="boxed">UTF-16</td></tr>
+</table>
+
+<p>
+How you enter these strings is up to you. Grammar strings tend to be constant so in
+languages with multi-line literals, like C++, C# and Python, the most convenient
+means of getting the grammar in to your program is probably those literals. In Java
+you will probably want to store the grammar in a separate file saved in your jar file
+and loaded into a string at run time. You can also use the filesystem in any
+language, just load the file into a string before calling Hoshi.
+</p>
+
+<p>
+Source strings in the language you wish to parse can be stored any number of places.
+For DSL's these could be condition strings, date strings or many other things. For
+code you could use a filesystem, database tables, etc. As long as you get a single
+long string in the end (which may contain newlines) Hoshi will be able to use it.
+</p>
+
+<h2>Generate</h2>
+
+<p>
+A Hoshi parser is a modal object. When first created it has no parsing engine. The
+parsing engine is created by generating it from a grammar with the
+<code>generate</code> method, which takes as arguments the grammar string, a map from
+strings to integers for AST kinds and the debug flags. 
+</p>
+
+<p>
+We've seen the first two of these arguments in the first section. The last option
+exists primarily to debug Hoshi itself but it was left in the library because some of
+the options can be useful in debugging grammars and parsers as well. The form of the
+flags is a bit vector stored in an integer. The simplest way to turn on all of them
+is to pass a -1, but that will generate a <i>lot</i> of logging. What is more likely
+to be useful is to use symbols provided by Hoshi in creating a more selective bit
+vector. Here is a list of the symbols available:
+</p>
+
+<table class="boxed">
+<tr class="boxed"><th class="boxed">Option</th><th class="boxed">Description</th></tr>
+<tr class="boxed"><td class="boxed"><code>DebugProgress</code></td>
+<td class="boxed">Dump timestamps at milestones.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugAstHandlers</code></td>
+<td class="boxed">Show each AST handler called.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugGrammar</code></td>
+<td class="boxed">Dump the grammar components.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugGrammarAst</code></td>
+<td class="boxed">Show grammar AST handling.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugLalr</code></td>
+<td class="boxed">Dump parsing automaton details.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugScanner</code></td>
+<td class="boxed">Dump Scanner DFA details.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugActions</code></td>
+<td class="boxed">Dump action coding.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugICode</code></td>
+<td class="boxed">Dump intermediate code.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugVCodeExec</code></td>
+<td class="boxed">Trace vm code execution.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugScanToken</code></td>
+<td class="boxed">Show each scanned token.</td></tr>
+<tr class="boxed"><td class="boxed"><code>DebugParseAction</code></td>
+<td class="boxed">Show each parse action.</td></tr>
+</table>
+
+<p>
+The most useful of these provide the grammar list or a list of the parsing automaton.
+The following code adapted from an early example illustrates:
+</p>
+
+<script type="text/CodeSample">
+!! C++
+#include <iostream>
+#include "Parser.H"
+
+using namespace std;
+using namespace hoshi;
+
+const string grammar = R"!(
+    E ::= E '+' T     : (Plus, $1, $3)
+    E ::= E '-' T     : (Minus, $1, $3)
+    E ::= T
+    T ::= T '*' F     : (Times, $1, $3)
+    T ::= T '/' F     : (Divide, $1, $3)
+    T ::= F
+    F ::= <integer>   : (Number, &1)
+    F ::= '(' E ')'   : $2
+)!";
+
+enum AstKindType
+{
+    Number,
+    Plus,
+    Minus,
+    Times,
+    Divide
+};
+
+int main() 
+{
+
+    map<string, int> kind_map;
+    kind_map["Number"] = AstKindType::Number;
+    kind_map["Plus"]   = AstKindType::Plus;
+    kind_map["Minus"]  = AstKindType::Minus;
+    kind_map["Times"]  = AstKindType::Times;
+    kind_map["Divide"] = AstKindType::Divide;
+
+    Parser parser;
+    try
+    {
+        parser.generate(grammar, kind_map,
+                        DebugType::DebugGrammar | DebugType::DebugLalr);
+    }
+    catch (GrammarError& e)
+    {
+        cout << "Grammar errors:" << endl;
+        for (auto msg: parser.get_error_messages())
+        {
+            cout << msg.get_string() << endl;
+        }
+    }
+        
+}
+!! Java
+//  Grammar file: ExampleTwo.G
+
+    E ::= E '+' T     : (Plus, $1, $3)
+    E ::= E '-' T     : (Minus, $1, $3)
+    E ::= T
+    T ::= T '*' F     : (Times, $1, $3)
+    T ::= T '/' F     : (Divide, $1, $3)
+    T ::= F
+    F ::= <integer>   : (Number, &1)
+    F ::= '(' E ')'   : $2
+
+//  Java file: ExampleTwo.java
+
+import java.lang.*;
+import java.util.*;
+import hoshi.*;
+
+public class ExampleTwo {
+
+    enum AstKindType
+    {
+        Number,
+        Plus,
+        Minus,
+        Times,
+        Divide
+    }
+
+    static AstKindType [] astKindTypeValues = AstKindType.values();
+
+    public static void main(String [] args) {
+
+        HashMap<String, Integer> kindMap = new HashMap<String, Integer>();
+
+        for (AstKindType astKindType: astKindTypeValues) {
+            kindMap.put(astKindType.name(), astKindType.ordinal());
+        }
+
+        Parser parser = null;
+        try {
+            parser = new Parser();
+            parser.generate(Parser.loadFile("ExampleTwo.G"), kindMap,
+                            DebugType.DebugGrammar | DebugType.DebugLalr);
+        } catch (GrammarError e) {
+            for (ErrorMessage m: parser.getErrorMessages()) {
+                System.out.println(m.getString());
+            }
+            Runtime.getRuntime().halt(1);
+        }
+
+    }
+
+}
+!! C#
+using System;
+using System.Text;
+using System.Collections.Generic;
+using hoshi;
+
+public class ExampleTwo
+{
+
+    private const string grammar = @"
+        E ::= E '+' T     : (Plus, $1, $3)
+        E ::= E '-' T     : (Minus, $1, $3)
+        E ::= T
+        T ::= T '*' F     : (Times, $1, $3)
+        T ::= T '/' F     : (Divide, $1, $3)
+        T ::= F
+        F ::= <integer>   : (Number, &1)
+        F ::= '(' E ')'   : $2
+    ";
+
+    enum AstKindType : int
+    {
+        Number = 0,
+        Plus   = 1,
+        Minus  = 2,
+        Times  = 3,
+        Divide = 4
+    }
+
+    public static void Main()
+    {
+
+        Dictionary<string, int> kindMap = new Dictionary<string, int>();
+
+        for (int i = 0; i < Enum.GetValues(typeof(AstKindType)).Length; i++)
+        {
+            kindMap[Enum.GetValues(typeof(AstKindType)).GetValue(i).ToString()] =
+                (int)Enum.GetValues(typeof(AstKindType)).GetValue(i);
+        }
+
+        Parser parser = null;
+        try
+        {
+            parser = new Parser();
+            parser.Generate(grammar, kindMap,
+                            DebugType.DebugGrammar | DebugType.DebugLalr);
+        }
+        catch (GrammarError)
+        {
+            foreach (ErrorMessage m in parser.GetErrorMessages())
+            {
+                Console.WriteLine(m.String);
+            }
+            Environment.Exit(1);
+        }
+
+    }
+
+}
+!! Python
+import Hoshi
+
+GRAMMAR = '''
+    E ::= E '+' T     : (Plus, $1, $3)
+    E ::= E '-' T     : (Minus, $1, $3)
+    E ::= T
+    T ::= T '*' F     : (Times, $1, $3)
+    T ::= T '/' F     : (Divide, $1, $3)
+    T ::= F
+    F ::= <integer>   : (Number, &1)
+    F ::= '(' E ')'   : $2
+'''                  
+
+parser = Hoshi.Parser()
+try:
+    parser.generate(GRAMMAR, DebugType.DebugGrammar | DebugType.DebugLalr)
+except Hoshi.GrammarError as e:
+    for message in parser.get_error_messages():
+        print(message.get_string())
+    exit(1)
+</script>
+
+<p>
+Notice that both the kind type map and the debug flags are optional. In languages without optional arguments
+there are overloaded functions that omit them. The debug flags should always be
+removed by the time you are ready to commit or ship your code.
+</p>
+
+<h2>Parse</h2>
+
+<p>
+Once generate has been called successfully you can begin parsing source strings.
+Executing parse once again changes the mode of the parser, this time loading it with
+an AST for the source or an error message list. You can call parse as many times as
+you wish with the same parsing engine.
+</p>
+
+<p>
+Like the generate method the parse method accepts an optional debug flags argument.
+The useful values for this method are <code>DebugScanToken</code> and
+<code>DebugParseAction</code>.
+</p>
+
+<h2>Abstract Syntax Trees</h2>
+
+<p>
+We've been using AST's for much of this document so there isn't much more explanation
+required. AST's are the primary output of the parser. Although you can create them
+yourself using features in the parser, the best approach is to use them as they are
+created in the parse. Hoshi provides accessors for each of the elements of the AST,
+the only difference is the capitalization conventions in the various client
+languages. Here are the methods available:
+</p>
+
+<table class="boxed">
+<tr class="boxed"><th class="boxed">C++</th>
+                  <th class="boxed">Java</th>
+                  <th class="boxed">C#</th>
+                  <th class="boxed">Python</th>
+</tr>
+<tr class="boxed"><td class="boxed">get_kind</td>
+                  <td class="boxed">getKind</td>
+                  <td class="boxed">GetKind</td>
+                  <td class="boxed">get_kind</td>
+</tr>
+<tr class="boxed"><td class="boxed">get_kind_string</td>
+                  <td class="boxed">getKindString</td>
+                  <td class="boxed">GetKindString</td>
+                  <td class="boxed">get_kind_string</td>
+</tr>
+<tr class="boxed"><td class="boxed">get_location</td>
+                  <td class="boxed">getLocation</td>
+                  <td class="boxed">GetLocation</td>
+                  <td class="boxed">get_location</td>
+</tr>
+<tr class="boxed"><td class="boxed">get_lexeme</td>
+                  <td class="boxed">getLexeme</td>
+                  <td class="boxed">GetLexeme</td>
+                  <td class="boxed">get_lexeme</td>
+</tr>
+<tr class="boxed"><td class="boxed">get_child</td>
+                  <td class="boxed">getChild</td>
+                  <td class="boxed">GetChild</td>
+                  <td class="boxed">get_child</td>
+</tr>
+</table>
+
+<p>
+What we do for each
+class is strike a balance between using an identical API and conforming to the
+client language conventions.
+</p>
+
+<h2>Error Messages</h2>
+
+<p>
+Errors are communicated to calling code through exceptions. If an error is discovered
+in the grammar the exception thrown will be <code>GrammarError</code>. If an error is
+discovered while parsing the source a <code>SourceError</code> will be thrown. In
+other situations an <code>UnknownError</code> will be thrown. 
+</p>
+
+<p>
+For <code>GrammarError</code> and <code>SourceError</code> the bulk of the error
+information is passed in a list of <code>ErrorMessage</code> objects. You can access
+the error message list in the parser as shown in any of our examples. You can also
+add more error messages using a call like:
+</p>
+
+<code style="font-size: 12pt"><pre>
+    parser.add_error(ErrorType::ErrorError,
+                     location,
+                     message);
+</pre></code>
+
+<p>
+The location can be taken from an AST node which allows you to produce a nicely
+formatted error list for semantic errors. The normal approach is to parse and if
+there are any errors display them and abort. If there are no parse errors then do the
+semantic processing and display any errors found there. Note that if there are parse
+errors then no AST will be available.
+</p>
+
+<p>
+There are multiple ways to use the generated message list. You can call
+<code>get_source_list</code> which gives a full listing of the source marked up with
+error messages, or you can display just the error messages using the
+<code>get_string</code> method of an error message to get a formatted message. Or you
+can even pick out the individual components of error messages (line number, column,
+message, etc.) and format the message yourself.
+</p>
+
+<section id="InstallationInstructions"><h1>Installation Instructions</h1>
+
+<p>
+Hoshi is still quite new and no distribution mechanism has be constructed yet. For
+now it will have to be built from sources. The Hoshi project is on github
+<a href="http://www.github.com/wkirksnyder/hoshi">here.</a>
+</p>
+
+<p>
+The first step in installation is to build the C++ sources. These are at
+<code>cpp/libsrc</code> in the project. If you want to use Hoshi in C++ you'll need a
+linkable library file, and for other languages you'll need a dynamically linkable
+library (.dll, .so or whatever your system uses).
+</p>
+
+<p>
+From there you'll have to build the wrappers for whatever language you want to use.
+There are sources for a Java jar file, a C# assemply and a Python module.
+</p>
+
+</body>
+</html>
+
+
+
