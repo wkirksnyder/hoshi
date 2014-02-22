@@ -44,14 +44,27 @@ HOSHI.py_parser_is_source_loaded.restype = c_bool
 HOSHI.py_parser_is_source_loaded.argtypes = [c_int64, c_void_p]
 HOSHI.py_parser_is_source_failed.restype = c_bool
 HOSHI.py_parser_is_source_failed.argtypes = [c_int64, c_void_p]
-HOSHI.py_parser_generate_1.argtypes = [c_int64, c_void_p, c_char_p]
-HOSHI.py_parser_parse.argtypes = [c_int64, c_void_p, c_char_p]
+HOSHI.py_parser_generate.argtypes = [c_int64, 
+                                     c_void_p, 
+                                     c_char_p, 
+                                     c_char_p, 
+                                     c_int64]
+HOSHI.py_parser_parse.argtypes = [c_int64, c_void_p, c_char_p, c_int64]
 HOSHI.py_parser_get_encoded_ast.argtypes = [c_int64, c_void_p, c_void_p]
 HOSHI.py_parser_get_encoded_kind_map.argtypes = [c_int64, c_void_p, c_void_p]
+HOSHI.py_parser_get_kind.restype = c_int
+HOSHI.py_parser_get_kind.argtypes = [c_int64, c_void_p, c_char_p]
+HOSHI.py_parser_get_kind_force.restype = c_int
+HOSHI.py_parser_get_kind_force.argtypes = [c_int64, c_void_p, c_char_p]
+HOSHI.py_parser_get_kind_string.argtypes = [c_int64, 
+                                            c_void_p, 
+                                            c_void_p, 
+                                            c_int]
 HOSHI.py_parser_add_error.argtypes = [c_int64, 
                                       c_void_p, 
                                       c_int, 
                                       c_int64, 
+                                      c_char_p, 
                                       c_char_p]
 HOSHI.py_parser_get_error_count.restype = c_int
 HOSHI.py_parser_get_error_count.argtypes = [c_int64, c_void_p]
@@ -63,9 +76,10 @@ HOSHI.py_parser_get_encoded_error_messages.argtypes = [c_int64,
 HOSHI.py_parser_get_source_list.argtypes = [c_int64, 
                                             c_void_p, 
                                             c_void_p, 
-                                            c_char_p]
+                                            c_char_p, 
+                                            c_int]
 HOSHI.py_parser_encode.argtypes = [c_int64, c_void_p, c_void_p]
-HOSHI.py_parser_decode_1.argtypes = [c_int64, c_void_p, c_char_p]
+HOSHI.py_parser_decode.argtypes = [c_int64, c_void_p, c_char_p, c_char_p]
 
 #
 #  ExceptionType
@@ -226,6 +240,18 @@ def string_result_in(result_ptr):
         return ""
     
 #
+#  kind_map_out
+#  ------------
+#                                                                
+#  Convert a kind_map to marshalled form.
+#
+
+def kind_map_out(kind_map):
+    if (kind_map == None):
+        return string_out(encode_kind_map({}))
+    return string_out(encode_kind_map(kind_map))
+
+#
 #  check_exceptions                                             
 #  ----------------
 #                                                                
@@ -256,8 +282,8 @@ def check_exceptions(exception_ptr):
         raise UnknownError(what)
     
 #
-#  Decoders                                                              
-#  --------                                                              
+#  Encoders & Decoders                                                   
+#  -------------------                                                   
 #                                                                        
 #  Data handled in this module is computed in a native code library.     
 #  Sometimes it's better to leave it there and access it on demand, and  
@@ -266,10 +292,12 @@ def check_exceptions(exception_ptr):
 #  operations that make it easier to un-marshall larger structures.      
 #
 
+def encode_int(value):
+    return str(value) + '|'
+
 def decode_int(marshalled, tail_ptr):
 
     buffer = ""
-
     while True:
         if marshalled[tail_ptr] == '`':
             tail_ptr += 1
@@ -281,10 +309,20 @@ def decode_int(marshalled, tail_ptr):
 
     return (int(buffer), tail_ptr)
 
+def encode_string(value):
+
+    buffer = ""
+    for c in value:
+        if c == '`' or c == '|':
+            buffer += '`'
+        buffer += c
+    buffer += '|'
+
+    return buffer
+    
 def decode_string(marshalled, tail_ptr):
 
     buffer = ""
-
     while True:
         if marshalled[tail_ptr] == '`':
             tail_ptr += 1
@@ -296,15 +334,23 @@ def decode_string(marshalled, tail_ptr):
 
     return (buffer, tail_ptr)
 
+def encode_kind_map(kind_map):
+
+    buffer = encode_int(len(kind_map))
+    for key in kind_map:
+        buffer += encode_string(key)    
+        buffer += encode_int(kind_map[key])
+    return buffer
+
 def decode_kind_map(marshalled, tail_ptr):
 
     (size, tail_ptr) = decode_int(marshalled, tail_ptr)
 
     kind_map = dict()
     for i in range(0, size):
-        (str, tail_ptr) = decode_string(marshalled, tail_ptr)
+        (key, tail_ptr) = decode_string(marshalled, tail_ptr)
         (num, tail_ptr) = decode_int(marshalled, tail_ptr)
-        kind_map[num] = str
+        kind_map[key] = num
 
     return (kind_map, tail_ptr)
 
@@ -317,10 +363,7 @@ def decode_ast(kind_map, marshalled, tail_ptr):
     root = Ast()
 
     (kind, tail_ptr) = decode_int(marshalled, tail_ptr)
-    if kind in kind_map:
-        root.set_kind(kind_map[kind])
-    else:
-        root.set_kind("Unknown")
+    root.set_kind(kind)
 
     (location, tail_ptr) = decode_int(marshalled, tail_ptr)
     root.set_location(location)
@@ -388,6 +431,9 @@ class Parser:
     #
 
     def __init__(self, *args):
+
+        self.kind_map = None
+        self.kind_imap = None
 
         if len(args) == 0:
             self.this_handle = HOSHI.py_parser_new_parser()
@@ -484,26 +530,33 @@ class Parser:
     #  generate
     #  --------
     #  
-    #  Generate a parser from a grammar file. This version does not include a
-    #  kind map for languages that do not have a switch on integer feature.
+    #  Generate a parser from a grammar file.
     #
-
+    
     def generate(self, source, *args):
         
         if len(args) > 0:
-            debug_flags = args[0]
+            kind_map = args[0]
+        else:
+            kind_map = None
+        
+        if len(args) > 1:
+            debug_flags = args[1]
         else:
             debug_flags = 0
         
         exception_ptr = c_void_p(None)
         
-        HOSHI.py_parser_generate_1(parser_handle_out(self.this_handle), 
-                                   byref(exception_ptr), 
-                                   string_out(source), 
-                                   int64_out(debug_flags))
+        HOSHI.py_parser_generate(parser_handle_out(self.this_handle), 
+                                 byref(exception_ptr), 
+                                 string_out(source), 
+                                 kind_map_out(kind_map), 
+                                 int64_out(debug_flags))
         
         check_exceptions(exception_ptr)
         
+        self.copy_kind_map()
+
     #
     #  parse
     #  -----
@@ -569,6 +622,132 @@ class Parser:
         return string_result_in(result_ptr)
         
     #
+    #  dump_ast
+    #  --------
+    #  
+    #  For debugging we'll provide a nice dump function.
+    #
+    
+    def dump_ast(self, ast, *args):
+
+        if len(args) > 0:
+            indent = int(args[0])
+        else:
+            indent = 0
+
+        line = " " * indent + self.get_kind_string(ast.kind) + "(" + str(ast.kind) + ")"
+
+        if ast.lexeme != "":
+            line += " [" + ast.lexeme + "]"
+
+        if ast.location >= 0:
+            line += " @ " + str(ast.location)
+
+        print(line)
+
+        for child in ast.children:
+            self.dump_ast(child, indent + 4)
+
+    #
+    #  copy_kind_map
+    #  -------------
+    #  
+    #  Get the kind map from the native library.
+    #
+    
+    def copy_kind_map(self):
+
+        try:
+
+            marshalled = self.get_encoded_kind_map()
+            (self.kind_map, tail_ptr) = decode_kind_map(marshalled, 0)
+
+            self.kind_imap = {}
+            for key in self.kind_map:
+                self.kind_imap[self.kind_map[key]] = key
+
+        except UnknownError as e:
+            raise e
+        except Exception as e:
+            raise UnknownError(str(e))
+
+    #
+    #  get_encoded_kind_map
+    #  --------------------
+    #  
+    #  Return the kind map encoded as a string. We use this method to pass the
+    #  kind map to the caller to facilitate interlanguage calls.
+    #
+
+    def get_encoded_kind_map(self):
+        
+        exception_ptr = c_void_p(None)
+        result_ptr = c_void_p(None)
+        
+        HOSHI.py_parser_get_encoded_kind_map(parser_handle_out(self.this_handle), 
+                                             byref(exception_ptr), 
+                                             byref(result_ptr))
+        
+        check_exceptions(exception_ptr)
+        
+        return string_result_in(result_ptr)
+        
+    #
+    #  get_kind
+    #  --------
+    #  
+    #  Get the integer code for a given string.
+    #
+    
+    def get_kind(self, kind_string):
+
+        if self.kind_map == None:
+            self.copy_kind_map()
+
+        if kind_string not in self.kind_map:
+            return -1
+
+        return self.kind_map[kind_string]
+
+    #
+    #  get_kind_force
+    #  --------------
+    #  
+    #  Get the integer code for a given string. If it doesn't exist then install it.
+    #
+    
+    def get_kind_force(self, kind_string):
+
+        if self.kind_map == None:
+            self.copy_kind_map()
+
+        if kind_string not in self.kind_map:
+            self.get_kind_force(self.this_handle, kind_string)
+            self.copy_kind_map()
+
+        return self.kind_map[kind_string]
+
+    #
+    #  get_kind_string
+    #  ---------------
+    #  
+    #  Get the text name for a numeric kind code.
+    #
+    
+    def get_kind_string(self, kind):
+
+        if type(kind) is Ast:
+            kind = kind.get_kind()
+
+        if self.kind_imap == None:
+            self.copy_kind_map()
+
+        if kind not in self.kind_imap:
+            return "Unknown"
+
+        return self.kind_imap[kind]
+
+    #
     #  add_error
     #  ---------
     #  
@@ -582,7 +761,7 @@ class Parser:
         if len(args) > 0:
             long_message = args[0]
         else:
-            long_message = 0
+            long_message = None
         
         exception_ptr = c_void_p(None)
         
@@ -661,7 +840,7 @@ class Parser:
     #  --------------------------
     #  
     #  Return the error messages encoded as a string. We use this method to pass
-    #  entire trees back to the caller to facilitate interlanguage calls.
+    #  entire lists back to the caller to facilitate interlanguage calls.
     #
 
     def get_encoded_error_messages(self):
@@ -730,17 +909,25 @@ class Parser:
     #  
     #  Decode a previously created string into a parser
     #
-
-    def decode(self, str):
+    
+    def decode(self, str, *args):
+        
+        if len(args) > 0:
+            kind_map = args[0]
+        else:
+            kind_map = None
         
         exception_ptr = c_void_p(None)
         
-        HOSHI.py_parser_decode_1(parser_handle_out(self.this_handle), 
-                                 byref(exception_ptr), 
-                                 string_out(str))
+        HOSHI.py_parser_decode(parser_handle_out(self.this_handle), 
+                               byref(exception_ptr), 
+                               string_out(str), 
+                               kind_map_out(kind_map))
         
         check_exceptions(exception_ptr)
         
+        self.copy_kind_map()
+
 #
 #  Ast (Abstract Syntax Tree)                                              
 #  --------------------------                                              
@@ -793,26 +980,6 @@ class Ast:
         while len(self.children) <= num:
             self.children.append(None)
         self.children[num] = child
-
-    def dump(self, *args):
-
-        if len(args) > 0:
-            indent = int(args[0])
-        else:
-            indent = 0
-
-        line = " " * indent + self.kind
-
-        if self.lexeme != "":
-            line += " [" + self.lexeme + "]"
-
-        if self.location >= 0:
-            line += " @ " + str(self.location)
-
-        print(line)
-
-        for child in self.children:
-            child.dump(indent + 4)
 
 #
 #  ErrorMessage                                                           

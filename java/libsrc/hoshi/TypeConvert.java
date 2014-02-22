@@ -1,3 +1,4 @@
+//#line 391 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  TypeConvert                                                           
 //  -----------                                                           

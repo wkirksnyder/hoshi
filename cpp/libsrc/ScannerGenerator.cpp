@@ -1,3 +1,4 @@
+#line 414 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 //
 //  ScannerGenerator                                                       
 //  ----------------                                                       
@@ -188,6 +189,7 @@ void (*ScannerGenerator::build_nfa_handler[])(ScannerGenerator& scan, Ast* root,
     handle_error,                     // ActionNot
     handle_error,                     // ActionDumpStack
     handle_error                      // ActionTokenCount
+#line 499 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 };
 
 char *ScannerGenerator::build_nfa_handler_name[]
@@ -319,6 +321,7 @@ char *ScannerGenerator::build_nfa_handler_name[]
     "handle_error",                   // ActionNot
     "handle_error",                   // ActionDumpStack
     "handle_error"                    // ActionTokenCount
+#line 525 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 };
 
 //
@@ -497,9 +500,11 @@ void ScannerGenerator::handle_build_nfa(ScannerGenerator& scan, Ast* root, Conte
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
+#line 707 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 void ScannerGenerator::handle_error(ScannerGenerator& scan,
                                     Ast* root,
                                     Context& ctx)
+#line 708 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     cout << "No ScannerGenerator::build_nfa handler for Ast!" << endl << endl;
     scan.prsi.dump_grammar_ast(root);
@@ -517,6 +522,7 @@ void ScannerGenerator::handle_error(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex(ScannerGenerator& scan,
                                     Ast* root,
                                     Context& ctx)
+#line 724 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     for (int i = 0; i < root->get_num_children(); i++)
@@ -537,6 +543,7 @@ void ScannerGenerator::handle_regex(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_or(ScannerGenerator& scan,
                                        Ast* root,
                                        Context& ctx)
+#line 743 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -570,6 +577,7 @@ void ScannerGenerator::handle_regex_or(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_list(ScannerGenerator& scan,
                                          Ast* root,
                                          Context& ctx)
+#line 775 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     for (int i = 0; i < root->get_num_children(); i++)
@@ -591,6 +599,7 @@ void ScannerGenerator::handle_regex_list(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_optional(ScannerGenerator& scan,
                                              Ast* root,
                                              Context& ctx)
+#line 795 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     Context cctx;
@@ -619,6 +628,7 @@ void ScannerGenerator::handle_regex_optional(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_zero_closure(ScannerGenerator& scan,
                                                  Ast* root,
                                                  Context& ctx)
+#line 822 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     Context cctx;
@@ -649,6 +659,7 @@ void ScannerGenerator::handle_regex_zero_closure(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_one_closure(ScannerGenerator& scan,
                                                 Ast* root,
                                                 Context& ctx)
+#line 851 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     Context cctx;
@@ -676,6 +687,7 @@ void ScannerGenerator::handle_regex_one_closure(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_wildcard(ScannerGenerator& scan,
                                              Ast* root,
                                              Context& ctx)
+#line 877 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] = { {0x00000000, 0xffffffff} };
@@ -702,6 +714,7 @@ void ScannerGenerator::handle_regex_wildcard(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_whitespace(ScannerGenerator& scan,
                                                Ast* root,
                                                Context& ctx)
+#line 902 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] = { {'\t', '\r'}, {' ', ' '} };
@@ -728,6 +741,7 @@ void ScannerGenerator::handle_regex_whitespace(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_not_whitespace(ScannerGenerator& scan,
                                                    Ast* root,
                                                    Context& ctx)
+#line 927 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] =
@@ -757,6 +771,7 @@ void ScannerGenerator::handle_regex_not_whitespace(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_digits(ScannerGenerator& scan,
                                            Ast* root,
                                            Context& ctx)
+#line 955 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] = { {'0', '9'} };
@@ -783,6 +798,7 @@ void ScannerGenerator::handle_regex_digits(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_not_digits(ScannerGenerator& scan,
                                                Ast* root,
                                                Context& ctx)
+#line 980 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] = { {0x00000000, '/'}, {':', 0xffffffff} };
@@ -799,6 +815,7 @@ void ScannerGenerator::handle_regex_not_digits(ScannerGenerator& scan,
 
 }
 
+#line 960 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 //
 //  handle_regex_char                                                  
 //  -----------------                                                  
@@ -810,6 +827,7 @@ void ScannerGenerator::handle_regex_not_digits(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_char(ScannerGenerator& scan,
                                          Ast* root,
                                          Context& ctx)
+#line 970 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     char32_t character = root->get_lexeme()[0];
@@ -832,6 +850,7 @@ void ScannerGenerator::handle_regex_char(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_escape(ScannerGenerator& scan,
                                            Ast* root,
                                            Context& ctx)
+#line 991 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -854,6 +873,7 @@ void ScannerGenerator::handle_regex_escape(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_alt_newline(ScannerGenerator& scan,
                                                 Ast* root,
                                                 Context& ctx)
+#line 1012 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -876,6 +896,7 @@ void ScannerGenerator::handle_regex_alt_newline(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_newline(ScannerGenerator& scan,
                                             Ast* root,
                                             Context& ctx)
+#line 1033 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -898,6 +919,7 @@ void ScannerGenerator::handle_regex_newline(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_cr(ScannerGenerator& scan,
                                        Ast* root,
                                        Context& ctx)
+#line 1054 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -920,6 +942,7 @@ void ScannerGenerator::handle_regex_cr(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_v_bar(ScannerGenerator& scan,
                                           Ast* root,
                                           Context& ctx)
+#line 1075 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -942,6 +965,7 @@ void ScannerGenerator::handle_regex_v_bar(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_star(ScannerGenerator& scan,
                                          Ast* root,
                                          Context& ctx)
+#line 1096 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -964,6 +988,7 @@ void ScannerGenerator::handle_regex_star(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_plus(ScannerGenerator& scan,
                                          Ast* root,
                                          Context& ctx)
+#line 1117 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -986,6 +1011,7 @@ void ScannerGenerator::handle_regex_plus(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_question(ScannerGenerator& scan,
                                              Ast* root,
                                              Context& ctx)
+#line 1138 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1008,6 +1034,7 @@ void ScannerGenerator::handle_regex_question(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_period(ScannerGenerator& scan,
                                            Ast* root,
                                            Context& ctx)
+#line 1159 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1030,6 +1057,7 @@ void ScannerGenerator::handle_regex_period(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_dollar(ScannerGenerator& scan,
                                            Ast* root,
                                            Context& ctx)
+#line 1180 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1052,6 +1080,7 @@ void ScannerGenerator::handle_regex_dollar(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_space(ScannerGenerator& scan,
                                           Ast* root,
                                           Context& ctx)
+#line 1201 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1074,6 +1103,7 @@ void ScannerGenerator::handle_regex_space(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_left_paren(ScannerGenerator& scan,
                                                Ast* root,
                                                Context& ctx)
+#line 1222 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1096,6 +1126,7 @@ void ScannerGenerator::handle_regex_left_paren(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_right_paren(ScannerGenerator& scan,
                                                 Ast* root,
                                                 Context& ctx)
+#line 1243 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1118,6 +1149,7 @@ void ScannerGenerator::handle_regex_right_paren(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_left_bracket(ScannerGenerator& scan,
                                                  Ast* root,
                                                  Context& ctx)
+#line 1264 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1140,6 +1172,7 @@ void ScannerGenerator::handle_regex_left_bracket(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_right_bracket(ScannerGenerator& scan,
                                                   Ast* root,
                                                   Context& ctx)
+#line 1285 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1162,6 +1195,7 @@ void ScannerGenerator::handle_regex_right_bracket(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_left_brace(ScannerGenerator& scan,
                                                Ast* root,
                                                Context& ctx)
+#line 1306 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1184,6 +1218,7 @@ void ScannerGenerator::handle_regex_left_brace(ScannerGenerator& scan,
 void ScannerGenerator::handle_regex_right_brace(ScannerGenerator& scan,
                                                 Ast* root,
                                                 Context& ctx)
+#line 1327 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     ctx.final_state = scan.get_new_state();
@@ -1196,6 +1231,7 @@ void ScannerGenerator::handle_regex_right_brace(ScannerGenerator& scan,
 
 }
 
+#line 1029 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 //
 //  handle_charset
 //  --------------
@@ -1206,6 +1242,7 @@ void ScannerGenerator::handle_regex_right_brace(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset(ScannerGenerator& scan,
                                       Ast* root,
                                       Context& ctx)
+#line 1038 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     Context cctx;
@@ -1233,6 +1270,7 @@ void ScannerGenerator::handle_charset(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_invert(ScannerGenerator& scan,
                                              Ast* root,
                                              Context& ctx)
+#line 1064 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     Context cctx;
@@ -1292,6 +1330,7 @@ void ScannerGenerator::handle_charset_invert(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_range(ScannerGenerator& scan,
                                             Ast* root,
                                             Context& ctx)
+#line 1122 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     handle_build_nfa(scan, root->get_child(0), ctx);
@@ -1327,6 +1366,7 @@ void ScannerGenerator::handle_charset_range(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_whitespace(ScannerGenerator& scan,
                                                  Ast* root,
                                                  Context& ctx)
+#line 1156 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] = { {'\t', '\r'}, {' ', ' '} };
@@ -1349,6 +1389,7 @@ void ScannerGenerator::handle_charset_whitespace(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_not_whitespace(ScannerGenerator& scan,
                                                      Ast* root,
                                                      Context& ctx)
+#line 1177 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] =
@@ -1374,6 +1415,7 @@ void ScannerGenerator::handle_charset_not_whitespace(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_digits(ScannerGenerator& scan,
                                              Ast* root,
                                              Context& ctx)
+#line 1201 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] = { {'0', '9'} };
@@ -1396,6 +1438,7 @@ void ScannerGenerator::handle_charset_digits(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_not_digits(ScannerGenerator& scan,
                                                  Ast* root,
                                                  Context& ctx)
+#line 1222 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
 
     static char32_t ranges[][2] = { {0x00000000, '/'}, {':', 0xffffffff} };
@@ -1408,6 +1451,7 @@ void ScannerGenerator::handle_charset_not_digits(ScannerGenerator& scan,
 
 }
 
+#line 1235 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 //
 //  handle_charset_char
 //  -------------------
@@ -1418,6 +1462,7 @@ void ScannerGenerator::handle_charset_not_digits(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_char(ScannerGenerator& scan,
                                            Ast* root,
                                            Context& ctx)
+#line 1244 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = root->get_lexeme()[0];
 }
@@ -1432,6 +1477,7 @@ void ScannerGenerator::handle_charset_char(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_escape(ScannerGenerator& scan,
                                              Ast* root,
                                              Context& ctx)
+#line 1257 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '\\';
 }
@@ -1446,6 +1492,7 @@ void ScannerGenerator::handle_charset_escape(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_alt_newline(ScannerGenerator& scan,
                                                   Ast* root,
                                                   Context& ctx)
+#line 1270 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '\n';
 }
@@ -1460,6 +1507,7 @@ void ScannerGenerator::handle_charset_alt_newline(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_newline(ScannerGenerator& scan,
                                               Ast* root,
                                               Context& ctx)
+#line 1283 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '\n';
 }
@@ -1474,6 +1522,7 @@ void ScannerGenerator::handle_charset_newline(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_cr(ScannerGenerator& scan,
                                          Ast* root,
                                          Context& ctx)
+#line 1296 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '\r';
 }
@@ -1488,6 +1537,7 @@ void ScannerGenerator::handle_charset_cr(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_caret(ScannerGenerator& scan,
                                             Ast* root,
                                             Context& ctx)
+#line 1309 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '^';
 }
@@ -1502,6 +1552,7 @@ void ScannerGenerator::handle_charset_caret(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_dash(ScannerGenerator& scan,
                                            Ast* root,
                                            Context& ctx)
+#line 1322 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '-';
 }
@@ -1516,6 +1567,7 @@ void ScannerGenerator::handle_charset_dash(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_dollar(ScannerGenerator& scan,
                                              Ast* root,
                                              Context& ctx)
+#line 1335 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '$';
 }
@@ -1530,6 +1582,7 @@ void ScannerGenerator::handle_charset_dollar(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_left_bracket(ScannerGenerator& scan,
                                                    Ast* root,
                                                    Context& ctx)
+#line 1348 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = '[';
 }
@@ -1544,10 +1597,12 @@ void ScannerGenerator::handle_charset_left_bracket(ScannerGenerator& scan,
 void ScannerGenerator::handle_charset_right_bracket(ScannerGenerator& scan,
                                                     Ast* root,
                                                     Context& ctx)
+#line 1361 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 {
     ctx.character = ']';
 }
 
+#line 1287 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 //
 //  nfa_to_dfa                                                         
 //  ----------

@@ -1,3 +1,4 @@
+#line 82 "u:\\hoshi\\raw\\Editor.cpp"
 //
 //  Editor                                                                 
 //  ------                                                                 

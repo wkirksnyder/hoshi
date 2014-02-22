@@ -8,7 +8,6 @@
 options
 
     lookaheads = 4
-    error_recovery = true
     conflicts = 0
     case_sensitive = true
 
@@ -74,9 +73,6 @@ rules
 
     OptionSpec           ::= 'conflicts' '=' IntegerValue
                          :   (AstConflicts, $3)
-
-    OptionSpec           ::= 'error_recovery' '=' BooleanValue
-                         :   (AstErrorRecovery, $3)
 
     OptionSpec           ::= 'keep_whitespace' '=' BooleanValue
                          :   (AstKeepWhitespace, $3)

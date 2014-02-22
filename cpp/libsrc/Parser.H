@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\Parser.cpp"
 //
 //  Parser                                                                 
 //  ------                                                                 
@@ -94,6 +95,7 @@ enum DebugType : int64_t
     DebugVCodeExec   = 1 <<   8,
     DebugScanToken   = 1 <<   9,
     DebugParseAction = 1 <<  10
+#line 101 "u:\\hoshi\\raw\\Parser.cpp"
 };
 
 //
@@ -131,6 +133,7 @@ enum ErrorType : int
     ErrorSyntax            =  18,
     ErrorLexical           =  19,
     ErrorAstIndex          =  20
+#line 131 "u:\\hoshi\\raw\\Parser.cpp"
 };
 
 //
@@ -152,6 +155,7 @@ class Source
 public:
 
     Source(const std::string& str = "");
+    Source(const char str[]) : Source(std::string(str)) {}
 
     //
     //  Text & character utilities. 

@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\CscWrapper.cpp"
 //
 //  CscWrapper                                                           
 //  ----------                                                           
@@ -796,7 +797,7 @@ int csc_Parser_get_warning_count(ptrdiff_t this_handle,
 //  -------------------------------------
 //  
 //  Return the error messages encoded as a string. We use this method to pass
-//  entire trees back to the caller to facilitate interlanguage calls.
+//  entire lists back to the caller to facilitate interlanguage calls.
 //
 
 extern "C" _declspec(dllexport)
@@ -899,4 +900,5 @@ void csc_Parser_decode(ptrdiff_t this_handle,
     
 }
 
+#line 420 "u:\\hoshi\\raw\\CscWrapper.cpp"
 #endif // _WIN64

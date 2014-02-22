@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\ErrorHandler.cpp"
 //
 //  ErrorHandler                                                          
 //  ------------                                                          

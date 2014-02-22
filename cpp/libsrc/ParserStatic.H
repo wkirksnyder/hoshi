@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\ParserStatic.cpp"
 //
 //  ParserStatic                                                           
 //  ------------                                                           
@@ -43,6 +44,7 @@ enum ExceptionType : int
     ExceptionGrammar = 1,
     ExceptionSource  = 2,
     ExceptionUnknown = 3
+#line 57 "u:\\hoshi\\raw\\ParserStatic.cpp"
 };
 
 //
@@ -69,6 +71,7 @@ class ParserStatic
 {
 public:
 
+#line 125 "u:\\hoshi\\raw\\ParserStatic.cpp"
     //
     //  parser_new_parser
     //  -----------------
@@ -241,41 +244,6 @@ public:
         {
             parser_handle_out(this_handle)->generate(source, 
                                                      kind_map, 
-                                                     debug_flags);
-        }
-        catch (hoshi::GrammarError& e)
-        {
-            exception_handler(ExceptionType::ExceptionGrammar, e.what());
-        }
-        catch (std::exception& e)
-        {
-            exception_handler(ExceptionType::ExceptionUnknown, e.what());
-        }
-        catch (...)
-        {
-            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
-        }
-        
-    }
-
-    //
-    //  parser_generate_1
-    //  -----------------
-    //  
-    //  Generate a parser from a grammar file. This version does not include a kind
-    //  map for languages that do not have a switch on integer feature.
-    //
-    
-    static void parser_generate_1(ptrdiff_t this_handle, 
-                                  ExceptionHandler exception_handler, 
-                                  const std::string& source, 
-                                  int64_t debug_flags)
-    {
-        
-        try
-        {
-            parser_handle_out(this_handle)->generate(source,
-                                                     std::map<std::string, int>(),
                                                      debug_flags);
         }
         catch (hoshi::GrammarError& e)
@@ -566,7 +534,7 @@ public:
     //  ---------------------------------
     //  
     //  Return the error messages encoded as a string. We use this method to
-    //  pass entire trees back to the caller to facilitate interlanguage calls.
+    //  pass entire lists back to the caller to facilitate interlanguage calls.
     //
 
     static void parser_get_encoded_error_messages(ptrdiff_t this_handle, 
@@ -675,33 +643,7 @@ public:
         
     }
 
-    //
-    //  parser_decode_1
-    //  ---------------
-    //  
-    //  Decode a previously created string into a parser
-    //
-
-    static void parser_decode_1(ptrdiff_t this_handle, 
-                                ExceptionHandler exception_handler, 
-                                const std::string& str)
-    {
-        
-        try
-        {
-            parser_handle_out(this_handle)->decode(str);
-        }
-        catch (std::exception& e)
-        {
-            exception_handler(ExceptionType::ExceptionUnknown, e.what());
-        }
-        catch (...)
-        {
-            exception_handler(ExceptionType::ExceptionUnknown, "Unknown exception");
-        }
-        
-    }
-
+#line 152 "u:\\hoshi\\raw\\ParserStatic.cpp"
 private:
 
     //

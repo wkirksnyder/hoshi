@@ -1,3 +1,4 @@
+//#line 649 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  Parser                                                                 
 //  ------                                                                 
@@ -85,6 +86,7 @@ public class Parser {
         delete_parser(thisHandle);
     }
 
+//#line 918 "u:\\hoshi\\raw\\JavaWrapper.java"
     //
     //  isGrammarLoaded
     //  ---------------
@@ -469,6 +471,7 @@ public class Parser {
         copyKindMap();
     }
 
+//#line 919 "u:\\hoshi\\raw\\JavaWrapper.java"
     //
     //  Declarations of functions in the Hoshi native library. 
     //
@@ -508,5 +511,6 @@ public class Parser {
     private static native void decode(long thisHandle, 
                                       String str, 
                                       String kindMap);
+//#line 924 "u:\\hoshi\\raw\\JavaWrapper.java"
 
 }

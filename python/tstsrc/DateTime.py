@@ -150,7 +150,7 @@ except Hoshi.GrammarError as e:
 #  Function entry point. Convert a string into a datetime.datetime. 
 #
 
-def parse_time(str):
+def parse_time(s):
 
     #
     #  Make a local copy of the parser and parse the string. 
@@ -160,9 +160,8 @@ def parse_time(str):
     try:
         parser.parse(s)
         root = parser.get_ast()
-    except SourceError as e:
-        print(str(e))
-        exit(1)
+    except Hoshi.SourceError as e:
+        return None
 
     #
     #  Read the individual components into a map and normalize them. 
@@ -174,8 +173,8 @@ def parse_time(str):
 
     root = parser.get_ast()
     for child in root.get_children():
-        date_time_element[child.get_kind()] = int(child.get_lexeme())
-        if child.get_kind() == "Millisecond":
+        date_time_element[parser.get_kind_string(child)] = int(child.get_lexeme())
+        if parser.get_kind_string(child) == "Millisecond":
             for j in range(3, len(child.get_lexeme())):
                 date_time_element["Millisecond"] /= 10
             for j in range(len(child.get_lexeme()), 3):
@@ -212,6 +211,8 @@ for s in ["11/19/13",
           "Tue, November 19, 13 11:19.4321",
           "13-Feb-2014 3:15PM",
           "Thu Feb 13 15:15:00 2014"]:
-    print("%-35s %s" % (s, parse_time(s).isoformat(' ')))
-
-
+    dt = parse_time(s)
+    if (dt == None):
+        print("%-35s *error*" % (s))
+    else:
+        print("%-35s %s" % (s, dt.isoformat(' ')))

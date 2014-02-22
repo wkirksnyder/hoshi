@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\ParserEngine.cpp"
 //
 //  ParserEngine                                                         
 //  ------------                                                         
@@ -351,6 +352,7 @@ private:
                                             int64_t& pc,
                                             int64_t location);
     
+#line 214 "u:\\hoshi\\raw\\ParserEngine.cpp"
 
     //
     //  Utilities. 

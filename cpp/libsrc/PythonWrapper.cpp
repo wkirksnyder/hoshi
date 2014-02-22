@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\PythonWrapper.cpp"
 //
 //  PythonWrapper                                                          
 //  -------------                                                          
@@ -25,6 +26,94 @@
 
 using namespace std;
 using namespace hoshi;
+
+//
+//  Primitive String Encoders and Decoders                            
+//  --------------------------------------                            
+//                                                                    
+//  Encode or decode small types as strings. We use these to marshall 
+//  aggregates to pass back and forth to client languages.            
+//
+
+static void encode_long(ostream& os, int64_t value)
+{
+    os << value << "|";    
+}
+
+static int64_t decode_long(istream& is)
+{
+
+    ostringstream ost;
+
+    for (;;) 
+    {
+
+        char c;
+        is >> c;
+ 
+        if (c == '`')
+        {
+            is >> c;
+        }
+        else if (c == '|')
+        {
+            break;
+        }
+
+        ost << c;
+
+    }
+        
+    return stoll(ost.str());
+
+}
+
+static void encode_string(ostream& os, const string& value)
+{
+
+    for (char c: value)
+    {
+
+        if (c == '`' || c == '|')
+        {
+            os << '`';
+        }
+     
+        os << c;
+
+    }
+
+    os << value << "|";    
+
+}
+
+static string decode_string(istream& is)
+{
+
+    ostringstream ost;
+
+    for (;;) 
+    {
+
+        char c;
+        is >> c;
+ 
+        if (c == '`')
+        {
+            is >> c;
+        }
+        else if (c == '|')
+        {
+            break;
+        }
+
+        ost << c;
+
+    }
+        
+    return ost.str();
+
+}
 
 //
 //  StringResultStruct & ExceptionStruct                                
@@ -89,6 +178,33 @@ static ExceptionHandler exception_handler_out(void** exception_handle)
 
 }
         
+//
+//  kind_map_out                                 
+//  ------------                                 
+//                                               
+//  Convert a marshalled kind_map into C++ form. 
+//
+
+static map<string, int> kind_map_out(char* str_in)
+{
+    
+    map<string, int> result;
+    istringstream is(str_in);
+
+    int size = decode_long(is);
+
+    while (size--)
+    {
+        string key = decode_string(is);
+        int value = decode_long(is);
+        result[key] = value;
+    }
+
+    return result;
+
+}
+
+#line 301 "u:\\hoshi\\raw\\PythonWrapper.cpp"
 //
 //  py_get_exception_type
 //  ---------------------
@@ -319,24 +435,25 @@ bool py_parser_is_source_failed(ptrdiff_t this_handle, void** exception_ptr)
 }
 
 //
-//  py_parser_generate_1
-//  --------------------
+//  py_parser_generate
+//  ------------------
 //  
-//  Generate a parser from a grammar file. This version does not include a kind
-//  map for languages that do not have a switch on integer feature.
+//  Generate a parser from a grammar file.
 //
 
 extern "C" EXTERN
-void py_parser_generate_1(ptrdiff_t this_handle, 
-                          void** exception_ptr, 
-                          char* source, 
-                          int64_t debug_flags)
+void py_parser_generate(ptrdiff_t this_handle, 
+                        void** exception_ptr, 
+                        char* source, 
+                        char* kind_map, 
+                        int64_t debug_flags)
 {
     
-    ParserStatic::parser_generate_1(this_handle, 
-                                    exception_handler_out(exception_ptr), 
-                                    source, 
-                                    debug_flags);
+    ParserStatic::parser_generate(this_handle, 
+                                  exception_handler_out(exception_ptr), 
+                                  source, 
+                                  kind_map_out(kind_map), 
+                                  debug_flags);
     
 }
 
@@ -398,6 +515,62 @@ void py_parser_get_encoded_kind_map(ptrdiff_t this_handle,
 }
 
 //
+//  py_parser_get_kind
+//  ------------------
+//  
+//  Get the integer code for a given string.
+//
+
+extern "C" EXTERN
+int py_parser_get_kind(ptrdiff_t this_handle, 
+                       void** exception_ptr, 
+                       char* kind_string)
+{
+    return ParserStatic::parser_get_kind(this_handle, 
+                                         exception_handler_out(exception_ptr), 
+                                         kind_string);
+}
+
+//
+//  py_parser_get_kind_force
+//  ------------------------
+//  
+//  Get the integer code for a given string. If it doesn't exist then install
+//  it.
+//
+
+extern "C" EXTERN
+int py_parser_get_kind_force(ptrdiff_t this_handle, 
+                             void** exception_ptr, 
+                             char* kind_string)
+{
+    return ParserStatic::parser_get_kind_force(this_handle, 
+                                               exception_handler_out(exception_ptr), 
+                                               kind_string);
+}
+
+//
+//  py_parser_get_kind_string
+//  -------------------------
+//  
+//  Get the text name for a numeric kind code.
+//
+
+extern "C" EXTERN
+void py_parser_get_kind_string(ptrdiff_t this_handle, 
+                               void** exception_ptr, 
+                               void** result_ptr, 
+                               int kind)
+{
+    
+    ParserStatic::parser_get_kind_string(this_handle, 
+                                         exception_handler_out(exception_ptr), 
+                                         string_result_out(result_ptr), 
+                                         kind);
+    
+}
+
+//
 //  py_parser_add_error
 //  -------------------
 //  
@@ -456,7 +629,7 @@ int py_parser_get_warning_count(ptrdiff_t this_handle, void** exception_ptr)
 //  ------------------------------------
 //  
 //  Return the error messages encoded as a string. We use this method to pass
-//  entire trees back to the caller to facilitate interlanguage calls.
+//  entire lists back to the caller to facilitate interlanguage calls.
 //
 
 extern "C" EXTERN
@@ -510,19 +683,23 @@ void py_parser_encode(ptrdiff_t this_handle,
 }
 
 //
-//  py_parser_decode_1
-//  ------------------
+//  py_parser_decode
+//  ----------------
 //  
 //  Decode a previously created string into a parser
 //
 
 extern "C" EXTERN
-void py_parser_decode_1(ptrdiff_t this_handle, 
-                        void** exception_ptr, 
-                        char* str)
+void py_parser_decode(ptrdiff_t this_handle, 
+                      void** exception_ptr, 
+                      char* str, 
+                      char* kind_map)
 {
-    ParserStatic::parser_decode_1(this_handle, 
-                                  exception_handler_out(exception_ptr), 
-                                  str);
+    
+    ParserStatic::parser_decode(this_handle, 
+                                exception_handler_out(exception_ptr), 
+                                str, 
+                                kind_map_out(kind_map));
+    
 }
 

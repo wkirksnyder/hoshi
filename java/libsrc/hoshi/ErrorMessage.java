@@ -1,3 +1,4 @@
+//#line 1018 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  ErrorMessage                                                           
 //  ------------                                                           

@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 //
 //  ReduceGenerator                                                       
 //  ---------------                                                       
@@ -172,6 +173,7 @@ private:
                                         Ast* root,
                                         Context& ctx);
     
+#line 174 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 
 };
 

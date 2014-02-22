@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\JavaWrapper.cpp"
 //
 //  JavaWrapper                                                           
 //  -----------                                                           
@@ -329,6 +330,7 @@ static map<string, int> kind_map_out(JNIEnv* env, jstring str_in)
 
 }
 
+#line 391 "u:\\hoshi\\raw\\JavaWrapper.cpp"
 //
 //  Java_hoshi_Initializer_initialize_1jni
 //  --------------------------------------
@@ -817,7 +819,7 @@ Java_hoshi_Parser_get_1warning_1count(JNIEnv* env,
 //  -----------------------------------------------
 //  
 //  Return the error messages encoded as a string. We use this method to pass
-//  entire trees back to the caller to facilitate interlanguage calls.
+//  entire lists back to the caller to facilitate interlanguage calls.
 //
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -919,4 +921,5 @@ Java_hoshi_Parser_decode(JNIEnv* env,
     
 }
 
+#line 418 "u:\\hoshi\\raw\\JavaWrapper.cpp"
 

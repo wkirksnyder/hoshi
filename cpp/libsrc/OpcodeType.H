@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\CodeGenerator.cpp"
 //
 //  OpcodeType                                          
 //  ----------                                          
@@ -57,6 +58,7 @@ enum OpcodeType : int
     OpcodeBranchLessEqual    =  35,
     OpcodeBranchGreaterThan  =  36,
     OpcodeBranchGreaterEqual =  37
+#line 50 "u:\\hoshi\\raw\\CodeGenerator.cpp"
 };
 
 } // namespace hoshi

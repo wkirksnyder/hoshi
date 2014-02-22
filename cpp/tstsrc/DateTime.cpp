@@ -1,3 +1,4 @@
+#line 1472 "u:\\hoshi\\raw\\cpp.tst"
 #include <mutex>
 #include <iostream>
 #include <chrono>
@@ -9,8 +10,7 @@ using namespace hoshi;
 
 #define LENGTH(x) (sizeof(x) / sizeof(x[0]))
 
-#pragma warning(disable : 1345)
-const string grammarx = R"!(
+const string grammar = R"!(
 //
 //  DateTime Grammar                                                       
 //  ----------------                                                       
@@ -126,14 +126,7 @@ rules
     AmPm           ::= 'pm'        : (AmPm &"12")
                   
     AmPm           ::= empty       : (AmPm &"0")
-                  
-##################################################################################
-##################################################################################
-##################################################################################
 )!";
-#pragma warning(default : 1345)
-
-string grammar = grammarx.substr(0, grammarx.find("###"));
 
 //
 //  parse_time                                                           
@@ -172,44 +165,36 @@ system_clock::time_point parse_time(const string& source)
     //
 
     static hoshi::Parser parser_ref;
-    static volatile bool initialized = false;
-    static mutex initialize_mutex;
+    static once_flag flag;
 
-    if (!initialized)
+    call_once(flag, [&]() -> void
     {
 
-        lock_guard<mutex> initialize_guard(initialize_mutex);
-
-        if (!initialized)
+        try
         {
 
-            try
-            {
+            map<string, int> kind_map;
+            kind_map["Year"] = DateTimeType::Year;
+            kind_map["Month"] = DateTimeType::Month;
+            kind_map["Day"] = DateTimeType::Day;
+            kind_map["Hour"] = DateTimeType::Hour;
+            kind_map["Minute"] = DateTimeType::Minute;
+            kind_map["Second"] = DateTimeType::Second;
+            kind_map["Millisecond"] = DateTimeType::Millisecond;
+            kind_map["AmPm"] = DateTimeType::AmPm;
+                
+            parser_ref.generate(grammar, kind_map,
+                                static_cast<DebugType>(0)
+                               );
 
-                map<string, int> kind_map;
-                kind_map["Year"] = DateTimeType::Year;
-                kind_map["Month"] = DateTimeType::Month;
-                kind_map["Day"] = DateTimeType::Day;
-                kind_map["Hour"] = DateTimeType::Hour;
-                kind_map["Minute"] = DateTimeType::Minute;
-                kind_map["Second"] = DateTimeType::Second;
-                kind_map["Millisecond"] = DateTimeType::Millisecond;
-                kind_map["AmPm"] = DateTimeType::AmPm;
-                    
-                parser_ref.generate(grammar, kind_map);
-
-            }
-            catch (hoshi::GrammarError& e)
-            {
-                parser_ref.dump_source(grammar, cerr);
-                exit(1);
-            }
-
-            initialized = true;
-        
+        }
+        catch (hoshi::GrammarError& e)
+        {
+            parser_ref.dump_source(grammar, cerr);
+            exit(1);
         }
 
-    }
+    });
 
     hoshi::Parser parser = parser_ref;
 
@@ -227,7 +212,9 @@ system_clock::time_point parse_time(const string& source)
     try
     {
 
-        parser.parse(source);
+        parser.parse(source,
+                     static_cast<DebugType>(0)
+                    );
         Ast* root = parser.get_ast();
 
         for (int i = 0; i < root->get_num_children(); i++)

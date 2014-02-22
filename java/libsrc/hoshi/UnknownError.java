@@ -1,3 +1,4 @@
+//#line 362 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  UnknownError                                                 
 //  ------------                                                 

@@ -1,3 +1,4 @@
+#line 189 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 //
 //  ReduceGenerator                                                       
 //  ---------------                                                       
@@ -172,6 +173,7 @@ void (*ReduceGenerator::former_handler[])(ReduceGenerator& redg,
     handle_error,                  // ActionNot
     handle_error,                  // ActionDumpStack
     handle_error                   // ActionTokenCount
+#line 258 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 };
 
 char *ReduceGenerator::former_handler_name[]
@@ -303,6 +305,7 @@ char *ReduceGenerator::former_handler_name[]
     "handle_error",                // ActionNot
     "handle_error",                // ActionDumpStack
     "handle_error"                 // ActionTokenCount
+#line 284 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 };
 
 //
@@ -433,9 +436,11 @@ void ReduceGenerator::handle_former(ReduceGenerator& redg,
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
+#line 418 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 void ReduceGenerator::handle_error(ReduceGenerator& redg,
                                    Ast* root,
                                    Context& ctx)
+#line 419 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
     cout << "No ReduceGenerator::former handler for Ast!" << endl << endl;
     redg.prsi.dump_grammar_ast(root);
@@ -454,6 +459,7 @@ void ReduceGenerator::handle_error(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_former(ReduceGenerator& redg,
                                         Ast* root,
                                         Context& ctx)
+#line 436 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     //
@@ -537,6 +543,7 @@ void ReduceGenerator::handle_ast_former(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_child(ReduceGenerator& redg,
                                        Ast* root,
                                        Context& ctx)
+#line 518 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     //
@@ -618,6 +625,7 @@ void ReduceGenerator::handle_ast_child(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_dot(ReduceGenerator& redg,
                                      Ast* root,
                                      Context& ctx)
+#line 598 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
     
     if (root->get_num_children() == 0)
@@ -695,6 +703,7 @@ void ReduceGenerator::handle_ast_dot(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_slice(ReduceGenerator& redg,
                                        Ast* root,
                                        Context& ctx)
+#line 674 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
     
     //
@@ -810,6 +819,7 @@ void ReduceGenerator::handle_ast_slice(ReduceGenerator& redg,
 void ReduceGenerator::handle_identifier(ReduceGenerator& redg,
                                         Ast* root,
                                         Context& ctx)
+#line 788 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     if (ctx.phase != PhaseType::PhaseData)
@@ -846,6 +856,7 @@ void ReduceGenerator::handle_identifier(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_kind(ReduceGenerator& redg,
                                       Ast* root,
                                       Context& ctx)
+#line 823 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     if (ctx.phase != PhaseType::PhaseData)
@@ -888,6 +899,7 @@ void ReduceGenerator::handle_ast_kind(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_location(ReduceGenerator& redg,
                                           Ast* root,
                                           Context& ctx)
+#line 864 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     if (ctx.phase != PhaseType::PhaseData)
@@ -930,6 +942,7 @@ void ReduceGenerator::handle_ast_location(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_location_string(ReduceGenerator& redg,
                                                  Ast* root,
                                                  Context& ctx)
+#line 905 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     if (ctx.phase != PhaseType::PhaseData)
@@ -967,6 +980,7 @@ void ReduceGenerator::handle_ast_location_string(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_lexeme(ReduceGenerator& redg,
                                         Ast* root,
                                         Context& ctx)
+#line 941 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     if (ctx.phase != PhaseType::PhaseData)
@@ -1009,6 +1023,7 @@ void ReduceGenerator::handle_ast_lexeme(ReduceGenerator& redg,
 void ReduceGenerator::handle_ast_lexeme_string(ReduceGenerator& redg,
                                                Ast* root,
                                                Context& ctx)
+#line 982 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
 
     if (ctx.phase != PhaseType::PhaseData)
@@ -1046,6 +1061,7 @@ void ReduceGenerator::handle_ast_lexeme_string(ReduceGenerator& redg,
 void ReduceGenerator::handle_integer(ReduceGenerator& redg,
                                      Ast* root,
                                      Context& ctx)
+#line 1018 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
     ctx.integer_value = atol(root->get_lexeme().c_str());
 }
@@ -1053,6 +1069,7 @@ void ReduceGenerator::handle_integer(ReduceGenerator& redg,
 void ReduceGenerator::handle_negative_integer(ReduceGenerator& redg,
                                               Ast* root,
                                               Context& ctx)
+#line 1024 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 {
     ctx.integer_value = -atol(root->get_lexeme().c_str());
 }

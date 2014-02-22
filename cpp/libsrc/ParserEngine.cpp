@@ -1,3 +1,4 @@
+#line 244 "u:\\hoshi\\raw\\ParserEngine.cpp"
 //
 //  ParserEngine                                                         
 //  ------------                                                         
@@ -84,6 +85,7 @@ VCodeHandler ParserEngine::vcode_handler[] =
     handle_branch_less_equal,       // BranchLessEqual
     handle_branch_greater_than,     // BranchGreaterThan
     handle_branch_greater_equal     // BranchGreaterEqual
+#line 314 "u:\\hoshi\\raw\\ParserEngine.cpp"
 };
 
 struct ParserEngine::VCodeHandlerInfo ParserEngine::vcode_handler_info[] = 
@@ -164,6 +166,7 @@ struct ParserEngine::VCodeHandlerInfo ParserEngine::vcode_handler_info[] =
        "handle_branch_greater_than",   "BranchGreaterThan"                       },
     {  handle_branch_greater_equal,    OpcodeType::OpcodeBranchGreaterEqual, 
        "handle_branch_greater_equal",  "BranchGreaterEqual"                      }
+#line 348 "u:\\hoshi\\raw\\ParserEngine.cpp"
 };
 
 //
@@ -396,6 +399,11 @@ void ParserEngine::parse()
     bool any_errors = false;
     for (;;)
     {
+
+        if ((debug_flags & DebugType::DebugParseAction) != 0)
+        {
+            cout << "State: " << state << endl;
+        }
 
         switch (action_type)
         {
@@ -1428,6 +1436,7 @@ void ParserEngine::call_vm(int64_t pc)
                 
                 }
                 
+#line 1519 "u:\\hoshi\\raw\\ParserEngine.cpp"
             }
 
             cout << ost.str() << endl;
@@ -1458,10 +1467,12 @@ void ParserEngine::call_vm(int64_t pc)
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
+#line 1554 "u:\\hoshi\\raw\\ParserEngine.cpp"
 void ParserEngine::handle_error(ParserEngine& prse,
                                 const VCodeOperand* operands,
                                 int64_t& pc,
                                 int64_t location)
+#line 1555 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     cout << "No ParserEngine::vcode handler for Opcode!" << endl << endl;
     exit(1);
@@ -1478,6 +1489,7 @@ void ParserEngine::handle_halt(ParserEngine& prse,
                                const VCodeOperand* operands,
                                int64_t& pc,
                                int64_t location)
+#line 1569 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     pc = -1;
 }
@@ -1493,6 +1505,7 @@ void ParserEngine::handle_call(ParserEngine& prse,
                                const VCodeOperand* operands,
                                int64_t& pc,
                                int64_t location)
+#line 1582 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.call_stack.push_back(pc);
     pc = operands[0].branch_target;
@@ -1509,6 +1522,7 @@ void ParserEngine::handle_return(ParserEngine& prse,
                                  const VCodeOperand* operands,
                                  int64_t& pc,
                                  int64_t location)
+#line 1596 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     pc = prse.call_stack.back();
     prse.call_stack.pop_back();
@@ -1525,6 +1539,7 @@ void ParserEngine::handle_assign(ParserEngine& prse,
                                  const VCodeOperand* operands,
                                  int64_t& pc,
                                  int64_t location)
+#line 1610 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.register_list[operands[0].integer] =
         prse.register_list[operands[1].integer];
@@ -1541,6 +1556,7 @@ void ParserEngine::handle_add(ParserEngine& prse,
                               const VCodeOperand* operands,
                               int64_t& pc,
                               int64_t location)
+#line 1624 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.register_list[operands[0].register_num] =
         prse.register_list[operands[1].register_num] +
@@ -1551,6 +1567,7 @@ void ParserEngine::handle_subtract(ParserEngine& prse,
                                    const VCodeOperand* operands,
                                    int64_t& pc,
                                    int64_t location)
+#line 1632 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.register_list[operands[0].register_num] =
         prse.register_list[operands[1].register_num] -
@@ -1561,6 +1578,7 @@ void ParserEngine::handle_multiply(ParserEngine& prse,
                                    const VCodeOperand* operands,
                                    int64_t& pc,
                                    int64_t location)
+#line 1640 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.register_list[operands[0].register_num] =
         prse.register_list[operands[1].register_num] *
@@ -1571,6 +1589,7 @@ void ParserEngine::handle_divide(ParserEngine& prse,
                                  const VCodeOperand* operands,
                                  int64_t& pc,
                                  int64_t location)
+#line 1648 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.register_list[operands[0].register_num] =
         prse.register_list[operands[1].register_num] /
@@ -1581,6 +1600,7 @@ void ParserEngine::handle_unary_minus(ParserEngine& prse,
                                       const VCodeOperand* operands,
                                       int64_t& pc,
                                       int64_t location)
+#line 1656 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.register_list[operands[0].register_num] =
         -prse.register_list[operands[1].register_num];
@@ -1597,6 +1617,7 @@ void ParserEngine::handle_branch(ParserEngine& prse,
                                  const VCodeOperand* operands,
                                  int64_t& pc,
                                  int64_t location)
+#line 1670 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     pc = operands[0].integer;
 }
@@ -1605,6 +1626,7 @@ void ParserEngine::handle_branch_equal(ParserEngine& prse,
                                        const VCodeOperand* operands,
                                        int64_t& pc,
                                        int64_t location)
+#line 1676 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     if (prse.register_list[operands[1].register_num] ==
         prse.register_list[operands[2].register_num])
@@ -1617,6 +1639,7 @@ void ParserEngine::handle_branch_not_equal(ParserEngine& prse,
                                            const VCodeOperand* operands,
                                            int64_t& pc,
                                            int64_t location)
+#line 1686 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     if (prse.register_list[operands[1].register_num] !=
         prse.register_list[operands[2].register_num])
@@ -1629,6 +1652,7 @@ void ParserEngine::handle_branch_less_than(ParserEngine& prse,
                                            const VCodeOperand* operands,
                                            int64_t& pc,
                                            int64_t location)
+#line 1696 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     if (prse.register_list[operands[1].register_num] <
         prse.register_list[operands[2].register_num])
@@ -1641,6 +1665,7 @@ void ParserEngine::handle_branch_less_equal(ParserEngine& prse,
                                             const VCodeOperand* operands,
                                             int64_t& pc,
                                             int64_t location)
+#line 1706 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     if (prse.register_list[operands[1].register_num] <=
         prse.register_list[operands[2].register_num])
@@ -1653,6 +1678,7 @@ void ParserEngine::handle_branch_greater_than(ParserEngine& prse,
                                               const VCodeOperand* operands,
                                               int64_t& pc,
                                               int64_t location)
+#line 1716 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     if (prse.register_list[operands[1].register_num] >
         prse.register_list[operands[2].register_num])
@@ -1665,6 +1691,7 @@ void ParserEngine::handle_branch_greater_equal(ParserEngine& prse,
                                                const VCodeOperand* operands,
                                                int64_t& pc,
                                                int64_t location)
+#line 1726 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     if (prse.register_list[operands[1].register_num] >=
         prse.register_list[operands[2].register_num])
@@ -1685,6 +1712,7 @@ void ParserEngine::handle_scan_start(ParserEngine& prse,
                                      const VCodeOperand* operands,
                                      int64_t& pc,
                                      int64_t location)
+#line 1744 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     //
@@ -1738,6 +1766,7 @@ void ParserEngine::handle_scan_accept(ParserEngine& prse,
                                       const VCodeOperand* operands,
                                       int64_t& pc,
                                       int64_t location)
+#line 1795 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.scan_accept_loc = prse.scan_next_loc;
     prse.scan_accept_symbol_num = operands[0].integer;
@@ -1755,6 +1784,7 @@ void ParserEngine::handle_scan_token(ParserEngine& prse,
                                      const VCodeOperand* operands,
                                      int64_t& pc,
                                      int64_t location)
+#line 1810 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     //
@@ -1799,6 +1829,7 @@ void ParserEngine::handle_scan_error(ParserEngine& prse,
                                      const VCodeOperand* operands,
                                      int64_t& pc,
                                      int64_t location)
+#line 1852 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     //
@@ -1847,6 +1878,7 @@ void ParserEngine::handle_scan_char(ParserEngine& prse,
                                     const VCodeOperand* operands,
                                     int64_t& pc,
                                     int64_t location)
+#line 1898 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     //
@@ -1981,6 +2013,7 @@ void ParserEngine::handle_ast_start(ParserEngine& prse,
                                     const VCodeOperand* operands,
                                     int64_t& pc,
                                     int64_t location)
+#line 2030 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.ast_dirty_set.clear();
     prse.ast_dirty_base_set.clear();
@@ -2001,6 +2034,7 @@ void ParserEngine::handle_ast_finish(ParserEngine& prse,
                                      const VCodeOperand* operands,
                                      int64_t& pc,
                                      int64_t location)
+#line 2048 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     for (auto ast_ptr: prse.ast_dirty_set)
@@ -2043,6 +2077,7 @@ void ParserEngine::handle_ast_new(ParserEngine& prse,
                                   const VCodeOperand* operands,
                                   int64_t& pc,
                                   int64_t location)
+#line 2088 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.register_list[operands[0].register_num] = prse.ast_stack.size();
 }
@@ -2060,6 +2095,7 @@ void ParserEngine::handle_ast_form(ParserEngine& prse,
                                    const VCodeOperand* operands,
                                    int64_t& pc,
                                    int64_t location)
+#line 2103 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     int num_children = prse.ast_stack.size() - prse.register_list[operands[1].register_num];
@@ -2099,6 +2135,7 @@ void ParserEngine::handle_ast_load(ParserEngine& prse,
                                    const VCodeOperand* operands,
                                    int64_t& pc,
                                    int64_t location)
+#line 2140 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     int index = prse.register_list[operands[1].integer] + operands[2].integer;
@@ -2126,6 +2163,7 @@ void ParserEngine::handle_ast_index(ParserEngine& prse,
                                     const VCodeOperand* operands,
                                     int64_t& pc,
                                     int64_t location)
+#line 2165 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     Ast* ast = prse.ast_list[operands[0].ast_num];
@@ -2161,6 +2199,7 @@ void ParserEngine::handle_ast_child(ParserEngine& prse,
                                     const VCodeOperand* operands,
                                     int64_t& pc,
                                     int64_t location)
+#line 2198 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     bool is_dirty = false;
@@ -2213,6 +2252,7 @@ void ParserEngine::handle_ast_child_slice(ParserEngine& prse,
                                           const VCodeOperand* operands,
                                           int64_t& pc,
                                           int64_t location)
+#line 2248 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     Ast* ast = prse.ast_list[operands[0].ast_num];
@@ -2283,6 +2323,7 @@ void ParserEngine::handle_ast_kind(ParserEngine& prse,
                                    const VCodeOperand* operands,
                                    int64_t& pc,
                                    int64_t location)
+#line 2316 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.ast_stack.back()->set_kind(prse.ast_list[operands[0].ast_num]->get_kind());
 }
@@ -2291,6 +2332,7 @@ void ParserEngine::handle_ast_kind_num(ParserEngine& prse,
                                        const VCodeOperand* operands,
                                        int64_t& pc,
                                        int64_t location)
+#line 2322 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.ast_stack.back()->set_kind(operands[0].integer);
 }
@@ -2299,6 +2341,7 @@ void ParserEngine::handle_ast_location(ParserEngine& prse,
                                        const VCodeOperand* operands,
                                        int64_t& pc,
                                        int64_t location)
+#line 2328 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.ast_stack.back()->set_location(prse.ast_list[operands[0].ast_num]->get_location());
 }
@@ -2307,6 +2350,7 @@ void ParserEngine::handle_ast_location_num(ParserEngine& prse,
                                            const VCodeOperand* operands,
                                            int64_t& pc,
                                            int64_t location)
+#line 2334 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.ast_stack.back()->set_location(operands[0].integer);
 }
@@ -2315,6 +2359,7 @@ void ParserEngine::handle_ast_lexeme(ParserEngine& prse,
                                      const VCodeOperand* operands,
                                      int64_t& pc,
                                      int64_t location)
+#line 2340 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.ast_stack.back()->set_lexeme(prse.ast_list[operands[0].ast_num]->get_lexeme());
 }
@@ -2323,6 +2368,7 @@ void ParserEngine::handle_ast_lexeme_string(ParserEngine& prse,
                                             const VCodeOperand* operands,
                                             int64_t& pc,
                                             int64_t location)
+#line 2346 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
     prse.ast_stack.back()->set_lexeme(prse.prsd.string_list[operands[0].string_num]);
 }
@@ -2339,6 +2385,7 @@ void ParserEngine::handle_dump_stack(ParserEngine& prse,
                                      const VCodeOperand* operands,
                                      int64_t& pc,
                                      int64_t location)
+#line 2360 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 
     for (int i = prse.ast_stack.size() - 1; i >= 0; i--)
@@ -2366,6 +2413,7 @@ void ParserEngine::handle_null(ParserEngine& prse,
                                const VCodeOperand* operands,
                                int64_t& pc,
                                int64_t location)
+#line 2385 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 }
 
@@ -2373,6 +2421,7 @@ void ParserEngine::handle_label(ParserEngine& prse,
                                 const VCodeOperand* operands,
                                 int64_t& pc,
                                 int64_t location)
+#line 2390 "u:\\hoshi\\raw\\ParserEngine.cpp"
 {
 }
 

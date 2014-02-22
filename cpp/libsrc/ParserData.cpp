@@ -1,3 +1,4 @@
+#line 390 "u:\\hoshi\\raw\\ParserData.cpp"
 //
 //  ParserData                                                             
 //  ----------                                                             
@@ -105,6 +106,7 @@ ParserData::EncodeHandler ParserData::encode_handler[] =
     handle_encode_string_count,           // StringCount
     handle_encode_string_list,            // StringList
     handle_encode_eof                     // Eof
+#line 469 "u:\\hoshi\\raw\\ParserData.cpp"
 };
 
 ParserData::DecodeHandler ParserData::decode_handler[] =
@@ -159,6 +161,7 @@ ParserData::DecodeHandler ParserData::decode_handler[] =
     handle_decode_string_count,           // StringCount
     handle_decode_string_list,            // StringList
     handle_decode_eof                     // Eof
+#line 495 "u:\\hoshi\\raw\\ParserData.cpp"
 };
 
 //
@@ -217,6 +220,7 @@ string ParserData::block_name[] =
     "StringCount",
     "StringList",
     "Eof" 
+#line 515 "u:\\hoshi\\raw\\ParserData.cpp"
 };
 
 //
@@ -285,11 +289,8 @@ void ParserData::attach(ParserData*& prsd)
 
     if (prsd != nullptr)
     {
-
         lock_guard<mutex> reference_guard(prsd->reference_mutex);
-
         ++prsd->reference_count;
-
     }
 
 }
@@ -308,9 +309,13 @@ void ParserData::detach(ParserData*& prsd)
     if (prsd != nullptr)
     {
 
-        lock_guard<mutex> reference_guard(prsd->reference_mutex);
+        bool should_delete = false;
+        {
+            lock_guard<mutex> reference_guard(prsd->reference_mutex);
+            should_delete = --prsd->reference_count == 0;
+        }
 
-        if (--prsd->reference_count == 0)
+        if (should_delete)
         {
             delete prsd;
         }
@@ -515,9 +520,11 @@ void ParserData::decode(const string& str,
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
+#line 818 "u:\\hoshi\\raw\\ParserData.cpp"
 void ParserData::handle_encode_error(const ParserData& prsd,
                                      const BlockType block,
                                      ostream& os)
+#line 819 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     cout << "No ParserData::encode handler for block "
          << block_name[block] << "!" << endl << endl;
@@ -533,10 +540,12 @@ void ParserData::handle_encode_error(const ParserData& prsd,
 //  this level we just skip past the block.                              
 //
 
+#line 839 "u:\\hoshi\\raw\\ParserData.cpp"
 void ParserData::handle_decode_error(ParserData& prsd,
                                      ParserTemp& temp,
                                      const BlockType block,
                                      const char*& next)
+#line 840 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     while (*next != block_separator)
@@ -556,6 +565,7 @@ void ParserData::handle_decode_error(ParserData& prsd,
 void ParserData::handle_encode_eof(const ParserData& prsd,
                                    const BlockType block,
                                    ostream& os)
+#line 858 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 }
 
@@ -563,6 +573,7 @@ void ParserData::handle_decode_eof(ParserData& prsd,
                                    ParserTemp& temp,
                                    const BlockType block,
                                    const char*& next)
+#line 863 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 }
         
@@ -577,6 +588,7 @@ void ParserData::handle_decode_eof(ParserData& prsd,
 void ParserData::handle_encode_version(const ParserData& prsd,
                                        const BlockType block,
                                        ostream& os)
+#line 876 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(ParserData::current_version, os);
 }
@@ -585,6 +597,7 @@ void ParserData::handle_decode_version(ParserData& prsd,
                                        ParserTemp& temp,
                                        const BlockType block,
                                        const char*& next)
+#line 882 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     temp.version = decode_int(next);
@@ -607,6 +620,7 @@ void ParserData::handle_decode_version(ParserData& prsd,
 void ParserData::handle_encode_kind_map(const ParserData& prsd,
                                         const BlockType block,
                                         ostream& os)
+#line 903 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (auto mp: prsd.kind_map)
@@ -621,6 +635,7 @@ void ParserData::handle_decode_kind_map(ParserData& prsd,
                                         ParserTemp& temp,
                                         const BlockType block,
                                         const char*& next)
+#line 915 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     map<string, int> old_kind_map;
@@ -685,6 +700,7 @@ void ParserData::handle_decode_kind_map(ParserData& prsd,
 void ParserData::handle_encode_source(const ParserData& prsd,
                                       const BlockType block,
                                       ostream& os)
+#line 978 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_string(prsd.src.get_string(0, prsd.src.length()), os);
 }
@@ -693,6 +709,7 @@ void ParserData::handle_decode_source(ParserData& prsd,
                                       ParserTemp& temp,
                                       const BlockType block,
                                       const char*& next)
+#line 984 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.src = Source(decode_string(next));
 }
@@ -707,6 +724,7 @@ void ParserData::handle_decode_source(ParserData& prsd,
 void ParserData::handle_encode_lookaheads(const ParserData& prsd,
                                           const BlockType block,
                                           ostream& os)
+#line 997 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.lookaheads, os);
 }
@@ -715,6 +733,7 @@ void ParserData::handle_decode_lookaheads(ParserData& prsd,
                                           ParserTemp& temp,
                                           const BlockType block,
                                           const char*& next)
+#line 1003 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.lookaheads = decode_int(next);
 }
@@ -729,6 +748,7 @@ void ParserData::handle_decode_lookaheads(ParserData& prsd,
 void ParserData::handle_encode_error_recovery(const ParserData& prsd,
                                               const BlockType block,
                                               ostream& os)
+#line 1016 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.error_recovery, os);
 }
@@ -737,6 +757,7 @@ void ParserData::handle_decode_error_recovery(ParserData& prsd,
                                               ParserTemp& temp,
                                               const BlockType block,
                                               const char*& next)
+#line 1022 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.error_recovery = decode_int(next);
 }
@@ -751,6 +772,7 @@ void ParserData::handle_decode_error_recovery(ParserData& prsd,
 void ParserData::handle_encode_error_symbol_num(const ParserData& prsd,
                                                 const BlockType block,
                                                 ostream& os)
+#line 1035 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.error_symbol_num, os);
 }
@@ -759,6 +781,7 @@ void ParserData::handle_decode_error_symbol_num(ParserData& prsd,
                                                 ParserTemp& temp,
                                                 const BlockType block,
                                                 const char*& next)
+#line 1041 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.error_symbol_num = decode_int(next);
 }
@@ -773,6 +796,7 @@ void ParserData::handle_decode_error_symbol_num(ParserData& prsd,
 void ParserData::handle_encode_eof_symbol_num(const ParserData& prsd,
                                               const BlockType block,
                                               ostream& os)
+#line 1054 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.eof_symbol_num, os);
 }
@@ -781,6 +805,7 @@ void ParserData::handle_decode_eof_symbol_num(ParserData& prsd,
                                               ParserTemp& temp,
                                               const BlockType block,
                                               const char*& next)
+#line 1060 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.eof_symbol_num = decode_int(next);
 }
@@ -795,6 +820,7 @@ void ParserData::handle_decode_eof_symbol_num(ParserData& prsd,
 void ParserData::handle_encode_token_count(const ParserData& prsd,
                                            const BlockType block,
                                            ostream& os)
+#line 1073 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.token_count, os);
 }
@@ -803,6 +829,7 @@ void ParserData::handle_decode_token_count(ParserData& prsd,
                                            ParserTemp& temp,
                                            const BlockType block,
                                            const char*& next)
+#line 1079 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.token_count = decode_int(next);
 }
@@ -817,6 +844,7 @@ void ParserData::handle_decode_token_count(ParserData& prsd,
 void ParserData::handle_encode_token_name_list(const ParserData& prsd,
                                                const BlockType block,
                                                ostream& os)
+#line 1092 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.token_count; i++)
@@ -830,6 +858,7 @@ void ParserData::handle_decode_token_name_list(ParserData& prsd,
                                                ParserTemp& temp,
                                                const BlockType block,
                                                const char*& next)
+#line 1103 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.token_name_list = new string[prsd.token_count];
@@ -851,6 +880,7 @@ void ParserData::handle_decode_token_name_list(ParserData& prsd,
 void ParserData::handle_encode_token_is_terminal(const ParserData& prsd,
                                                  const BlockType block,
                                                  ostream& os)
+#line 1123 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.token_count; i++)
@@ -864,6 +894,7 @@ void ParserData::handle_decode_token_is_terminal(ParserData& prsd,
                                                  ParserTemp& temp,
                                                  const BlockType block,
                                                  const char*& next)
+#line 1134 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.token_is_terminal = new bool[prsd.token_count];
@@ -885,6 +916,7 @@ void ParserData::handle_decode_token_is_terminal(ParserData& prsd,
 void ParserData::handle_encode_token_kind(const ParserData& prsd,
                                           const BlockType block,
                                           ostream& os)
+#line 1154 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.token_count; i++)
@@ -898,6 +930,7 @@ void ParserData::handle_decode_token_kind(ParserData& prsd,
                                           ParserTemp& temp,
                                           const BlockType block,
                                           const char*& next)
+#line 1165 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.token_kind = new int[prsd.token_count];
@@ -919,6 +952,7 @@ void ParserData::handle_decode_token_kind(ParserData& prsd,
 void ParserData::handle_encode_token_lexeme_needed(const ParserData& prsd,
                                                    const BlockType block,
                                                    ostream& os)
+#line 1185 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.token_count; i++)
@@ -932,6 +966,7 @@ void ParserData::handle_decode_token_lexeme_needed(ParserData& prsd,
                                                    ParserTemp& temp,
                                                    const BlockType block,
                                                    const char*& next)
+#line 1196 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.token_lexeme_needed = new bool[prsd.token_count];
@@ -953,6 +988,7 @@ void ParserData::handle_decode_token_lexeme_needed(ParserData& prsd,
 void ParserData::handle_encode_rule_count(const ParserData& prsd,
                                           const BlockType block,
                                           ostream& os)
+#line 1216 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.rule_count, os);
 }
@@ -961,6 +997,7 @@ void ParserData::handle_decode_rule_count(ParserData& prsd,
                                           ParserTemp& temp,
                                           const BlockType block,
                                           const char*& next)
+#line 1222 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.rule_count = decode_int(next);
 }
@@ -975,6 +1012,7 @@ void ParserData::handle_decode_rule_count(ParserData& prsd,
 void ParserData::handle_encode_rule_size(const ParserData& prsd,
                                          const BlockType block,
                                          ostream& os)
+#line 1235 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.rule_count; i++)
@@ -988,6 +1026,7 @@ void ParserData::handle_decode_rule_size(ParserData& prsd,
                                          ParserTemp& temp,
                                          const BlockType block,
                                          const char*& next)
+#line 1246 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.rule_size = new int[prsd.rule_count];
@@ -1009,6 +1048,7 @@ void ParserData::handle_decode_rule_size(ParserData& prsd,
 void ParserData::handle_encode_rule_lhs(const ParserData& prsd,
                                         const BlockType block,
                                         ostream& os)
+#line 1266 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.rule_count; i++)
@@ -1022,6 +1062,7 @@ void ParserData::handle_decode_rule_lhs(ParserData& prsd,
                                         ParserTemp& temp,
                                         const BlockType block,
                                         const char*& next)
+#line 1277 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.rule_lhs = new int[prsd.rule_count];
@@ -1043,6 +1084,7 @@ void ParserData::handle_decode_rule_lhs(ParserData& prsd,
 void ParserData::handle_encode_rule_text(const ParserData& prsd,
                                          const BlockType block,
                                          ostream& os)
+#line 1297 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.rule_count; i++)
@@ -1056,6 +1098,7 @@ void ParserData::handle_decode_rule_text(ParserData& prsd,
                                          ParserTemp& temp,
                                          const BlockType block,
                                          const char*& next)
+#line 1308 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.rule_text = new string[prsd.rule_count];
@@ -1077,6 +1120,7 @@ void ParserData::handle_decode_rule_text(ParserData& prsd,
 void ParserData::handle_encode_rule_pc(const ParserData& prsd,
                                        const BlockType block,
                                        ostream& os)
+#line 1328 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.rule_count; i++)
@@ -1090,6 +1134,7 @@ void ParserData::handle_decode_rule_pc(ParserData& prsd,
                                        ParserTemp& temp,
                                        const BlockType block,
                                        const char*& next)
+#line 1339 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.rule_pc = new int64_t[prsd.rule_count];
@@ -1111,6 +1156,7 @@ void ParserData::handle_decode_rule_pc(ParserData& prsd,
 void ParserData::handle_encode_scanner_pc(const ParserData& prsd,
                                           const BlockType block,
                                           ostream& os)
+#line 1359 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.scanner_pc, os);
 }
@@ -1119,6 +1165,7 @@ void ParserData::handle_decode_scanner_pc(ParserData& prsd,
                                           ParserTemp& temp,
                                           const BlockType block,
                                           const char*& next)
+#line 1365 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.scanner_pc = decode_int(next);
 }
@@ -1133,6 +1180,7 @@ void ParserData::handle_decode_scanner_pc(ParserData& prsd,
 void ParserData::handle_encode_start_state(const ParserData& prsd,
                                            const BlockType block,
                                            ostream& os)
+#line 1378 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.start_state, os);
 }
@@ -1141,6 +1189,7 @@ void ParserData::handle_decode_start_state(ParserData& prsd,
                                            ParserTemp& temp,
                                            const BlockType block,
                                            const char*& next)
+#line 1384 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.start_state = decode_int(next);
 }
@@ -1155,6 +1204,7 @@ void ParserData::handle_decode_start_state(ParserData& prsd,
 void ParserData::handle_encode_restart_state(const ParserData& prsd,
                                              const BlockType block,
                                              ostream& os)
+#line 1397 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.restart_state, os);
 }
@@ -1163,6 +1213,7 @@ void ParserData::handle_decode_restart_state(ParserData& prsd,
                                              ParserTemp& temp,
                                              const BlockType block,
                                              const char*& next)
+#line 1403 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.restart_state = decode_int(next);
 }
@@ -1177,6 +1228,7 @@ void ParserData::handle_decode_restart_state(ParserData& prsd,
 void ParserData::handle_encode_checked_index_count(const ParserData& prsd,
                                                    const BlockType block,
                                                    ostream& os)
+#line 1416 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.checked_index_count, os);
 }
@@ -1185,6 +1237,7 @@ void ParserData::handle_decode_checked_index_count(ParserData& prsd,
                                                    ParserTemp& temp,
                                                    const BlockType block,
                                                    const char*& next)
+#line 1422 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.checked_index_count = decode_int(next);
 }
@@ -1199,6 +1252,7 @@ void ParserData::handle_decode_checked_index_count(ParserData& prsd,
 void ParserData::handle_encode_checked_index(const ParserData& prsd,
                                              const BlockType block,
                                              ostream& os)
+#line 1435 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     
     for (int i = 0; i < prsd.checked_index_count; i++)
@@ -1212,6 +1266,7 @@ void ParserData::handle_decode_checked_index(ParserData& prsd,
                                              ParserTemp& temp,
                                              const BlockType block,
                                              const char*& next)
+#line 1446 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.checked_index = new int64_t[prsd.checked_index_count];
@@ -1233,6 +1288,7 @@ void ParserData::handle_decode_checked_index(ParserData& prsd,
 void ParserData::handle_encode_checked_data_count(const ParserData& prsd,
                                                   const BlockType block,
                                                   ostream& os)
+#line 1466 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.checked_data_count, os);
 }
@@ -1241,6 +1297,7 @@ void ParserData::handle_decode_checked_data_count(ParserData& prsd,
                                                   ParserTemp& temp,
                                                   const BlockType block,
                                                   const char*& next)
+#line 1472 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.checked_data_count = decode_int(next);
 }
@@ -1255,6 +1312,7 @@ void ParserData::handle_decode_checked_data_count(ParserData& prsd,
 void ParserData::handle_encode_checked_data(const ParserData& prsd,
                                             const BlockType block,
                                             ostream& os)
+#line 1485 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     
     for (int i = 0; i < prsd.checked_data_count; i++)
@@ -1268,6 +1326,7 @@ void ParserData::handle_decode_checked_data(ParserData& prsd,
                                             ParserTemp& temp,
                                             const BlockType block,
                                             const char*& next)
+#line 1496 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.checked_data = new int64_t[prsd.checked_data_count];
@@ -1289,6 +1348,7 @@ void ParserData::handle_decode_checked_data(ParserData& prsd,
 void ParserData::handle_encode_num_offsets(const ParserData& prsd,
                                            const BlockType block,
                                            ostream& os)
+#line 1516 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.num_offsets, os);
 }
@@ -1297,6 +1357,7 @@ void ParserData::handle_decode_num_offsets(ParserData& prsd,
                                            ParserTemp& temp,
                                            const BlockType block,
                                            const char*& next)
+#line 1522 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.num_offsets = decode_int(next);
 }
@@ -1311,6 +1372,7 @@ void ParserData::handle_decode_num_offsets(ParserData& prsd,
 void ParserData::handle_encode_symbol_num_offset(const ParserData& prsd,
                                                  const BlockType block,
                                                  ostream& os)
+#line 1535 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.symbol_num_offset, os);
 }
@@ -1319,6 +1381,7 @@ void ParserData::handle_decode_symbol_num_offset(ParserData& prsd,
                                                  ParserTemp& temp,
                                                  const BlockType block,
                                                  const char*& next)
+#line 1541 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.symbol_num_offset = decode_int(next);
 }
@@ -1333,6 +1396,7 @@ void ParserData::handle_decode_symbol_num_offset(ParserData& prsd,
 void ParserData::handle_encode_symbol_num_shift(const ParserData& prsd,
                                                 const BlockType block,
                                                 ostream& os)
+#line 1554 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.symbol_num_shift, os);
 }
@@ -1341,6 +1405,7 @@ void ParserData::handle_decode_symbol_num_shift(ParserData& prsd,
                                                 ParserTemp& temp,
                                                 const BlockType block,
                                                 const char*& next)
+#line 1560 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.symbol_num_shift = decode_int(next);
 }
@@ -1355,6 +1420,7 @@ void ParserData::handle_decode_symbol_num_shift(ParserData& prsd,
 void ParserData::handle_encode_symbol_num_mask(const ParserData& prsd,
                                                const BlockType block,
                                                ostream& os)
+#line 1573 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.symbol_num_mask, os);
 }
@@ -1363,6 +1429,7 @@ void ParserData::handle_decode_symbol_num_mask(ParserData& prsd,
                                                ParserTemp& temp,
                                                const BlockType block,
                                                const char*& next)
+#line 1579 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.symbol_num_mask = decode_int(next);
 }
@@ -1377,6 +1444,7 @@ void ParserData::handle_decode_symbol_num_mask(ParserData& prsd,
 void ParserData::handle_encode_action_type_offset(const ParserData& prsd,
                                                   const BlockType block,
                                                   ostream& os)
+#line 1592 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.action_type_offset, os);
 }
@@ -1385,6 +1453,7 @@ void ParserData::handle_decode_action_type_offset(ParserData& prsd,
                                                   ParserTemp& temp,
                                                   const BlockType block,
                                                   const char*& next)
+#line 1598 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.action_type_offset = decode_int(next);
 }
@@ -1399,6 +1468,7 @@ void ParserData::handle_decode_action_type_offset(ParserData& prsd,
 void ParserData::handle_encode_action_type_shift(const ParserData& prsd,
                                                  const BlockType block,
                                                  ostream& os)
+#line 1611 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.action_type_shift, os);
 }
@@ -1407,6 +1477,7 @@ void ParserData::handle_decode_action_type_shift(ParserData& prsd,
                                                  ParserTemp& temp,
                                                  const BlockType block,
                                                  const char*& next)
+#line 1617 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.action_type_shift = decode_int(next);
 }
@@ -1421,6 +1492,7 @@ void ParserData::handle_decode_action_type_shift(ParserData& prsd,
 void ParserData::handle_encode_action_type_mask(const ParserData& prsd,
                                                 const BlockType block,
                                                 ostream& os)
+#line 1630 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.action_type_mask, os);
 }
@@ -1429,6 +1501,7 @@ void ParserData::handle_decode_action_type_mask(ParserData& prsd,
                                                 ParserTemp& temp,
                                                 const BlockType block,
                                                 const char*& next)
+#line 1636 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.action_type_mask = decode_int(next);
 }
@@ -1443,6 +1516,7 @@ void ParserData::handle_decode_action_type_mask(ParserData& prsd,
 void ParserData::handle_encode_rule_num_offset(const ParserData& prsd,
                                                const BlockType block,
                                                ostream& os)
+#line 1649 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.rule_num_offset, os);
 }
@@ -1451,6 +1525,7 @@ void ParserData::handle_decode_rule_num_offset(ParserData& prsd,
                                                ParserTemp& temp,
                                                const BlockType block,
                                                const char*& next)
+#line 1655 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.rule_num_offset = decode_int(next);
 }
@@ -1465,6 +1540,7 @@ void ParserData::handle_decode_rule_num_offset(ParserData& prsd,
 void ParserData::handle_encode_rule_num_shift(const ParserData& prsd,
                                               const BlockType block,
                                               ostream& os)
+#line 1668 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.rule_num_shift, os);
 }
@@ -1473,6 +1549,7 @@ void ParserData::handle_decode_rule_num_shift(ParserData& prsd,
                                               ParserTemp& temp,
                                               const BlockType block,
                                               const char*& next)
+#line 1674 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.rule_num_shift = decode_int(next);
 }
@@ -1487,6 +1564,7 @@ void ParserData::handle_decode_rule_num_shift(ParserData& prsd,
 void ParserData::handle_encode_rule_num_mask(const ParserData& prsd,
                                              const BlockType block,
                                              ostream& os)
+#line 1687 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.rule_num_mask, os);
 }
@@ -1495,6 +1573,7 @@ void ParserData::handle_decode_rule_num_mask(ParserData& prsd,
                                              ParserTemp& temp,
                                              const BlockType block,
                                              const char*& next)
+#line 1693 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.rule_num_mask = decode_int(next);
 }
@@ -1509,6 +1588,7 @@ void ParserData::handle_decode_rule_num_mask(ParserData& prsd,
 void ParserData::handle_encode_state_num_offset(const ParserData& prsd,
                                                 const BlockType block,
                                                 ostream& os)
+#line 1706 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.state_num_offset, os);
 }
@@ -1517,6 +1597,7 @@ void ParserData::handle_decode_state_num_offset(ParserData& prsd,
                                                 ParserTemp& temp,
                                                 const BlockType block,
                                                 const char*& next)
+#line 1712 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.state_num_offset = decode_int(next);
 }
@@ -1531,6 +1612,7 @@ void ParserData::handle_decode_state_num_offset(ParserData& prsd,
 void ParserData::handle_encode_state_num_shift(const ParserData& prsd,
                                                const BlockType block,
                                                ostream& os)
+#line 1725 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.state_num_shift, os);
 }
@@ -1539,6 +1621,7 @@ void ParserData::handle_decode_state_num_shift(ParserData& prsd,
                                                ParserTemp& temp,
                                                const BlockType block,
                                                const char*& next)
+#line 1731 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.state_num_shift = decode_int(next);
 }
@@ -1553,6 +1636,7 @@ void ParserData::handle_decode_state_num_shift(ParserData& prsd,
 void ParserData::handle_encode_state_num_mask(const ParserData& prsd,
                                               const BlockType block,
                                               ostream& os)
+#line 1744 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.state_num_mask, os);
 }
@@ -1561,6 +1645,7 @@ void ParserData::handle_decode_state_num_mask(ParserData& prsd,
                                               ParserTemp& temp,
                                               const BlockType block,
                                               const char*& next)
+#line 1750 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.state_num_mask = decode_int(next);
 }
@@ -1575,6 +1660,7 @@ void ParserData::handle_decode_state_num_mask(ParserData& prsd,
 void ParserData::handle_encode_fallback_num_offset(const ParserData& prsd,
                                                    const BlockType block,
                                                    ostream& os)
+#line 1763 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.fallback_num_offset, os);
 }
@@ -1583,6 +1669,7 @@ void ParserData::handle_decode_fallback_num_offset(ParserData& prsd,
                                                    ParserTemp& temp,
                                                    const BlockType block,
                                                    const char*& next)
+#line 1769 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.fallback_num_offset = decode_int(next);
 }
@@ -1597,6 +1684,7 @@ void ParserData::handle_decode_fallback_num_offset(ParserData& prsd,
 void ParserData::handle_encode_fallback_num_shift(const ParserData& prsd,
                                                   const BlockType block,
                                                   ostream& os)
+#line 1782 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.fallback_num_shift, os);
 }
@@ -1605,6 +1693,7 @@ void ParserData::handle_decode_fallback_num_shift(ParserData& prsd,
                                                   ParserTemp& temp,
                                                   const BlockType block,
                                                   const char*& next)
+#line 1788 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.fallback_num_shift = decode_int(next);
 }
@@ -1619,6 +1708,7 @@ void ParserData::handle_decode_fallback_num_shift(ParserData& prsd,
 void ParserData::handle_encode_fallback_num_mask(const ParserData& prsd,
                                                  const BlockType block,
                                                  ostream& os)
+#line 1801 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.fallback_num_mask, os);
 }
@@ -1627,6 +1717,7 @@ void ParserData::handle_decode_fallback_num_mask(ParserData& prsd,
                                                  ParserTemp& temp,
                                                  const BlockType block,
                                                  const char*& next)
+#line 1807 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.fallback_num_mask = decode_int(next);
 }
@@ -1641,6 +1732,7 @@ void ParserData::handle_decode_fallback_num_mask(ParserData& prsd,
 void ParserData::handle_encode_opcode_map(const ParserData& prsd,
                                           const BlockType block,
                                           ostream& os)
+#line 1820 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = OpcodeType::OpcodeMinimum;
@@ -1663,6 +1755,7 @@ void ParserData::handle_decode_opcode_map(ParserData& prsd,
                                           ParserTemp& temp,
                                           const BlockType block,
                                           const char*& next)
+#line 1840 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     map<string, int> curr_opcode_map;
@@ -1709,6 +1802,7 @@ void ParserData::handle_decode_opcode_map(ParserData& prsd,
 void ParserData::handle_encode_instruction_count(const ParserData& prsd,
                                                  const BlockType block,
                                                  ostream& os)
+#line 1885 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.instruction_count, os);
 }
@@ -1717,6 +1811,7 @@ void ParserData::handle_decode_instruction_count(ParserData& prsd,
                                                  ParserTemp& temp,
                                                  const BlockType block,
                                                  const char*& next)
+#line 1891 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.instruction_count = decode_int(next);
 }
@@ -1731,6 +1826,7 @@ void ParserData::handle_decode_instruction_count(ParserData& prsd,
 void ParserData::handle_encode_operand_count(const ParserData& prsd,
                                              const BlockType block,
                                              ostream& os)
+#line 1904 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.operand_count, os);
 }
@@ -1739,6 +1835,7 @@ void ParserData::handle_decode_operand_count(ParserData& prsd,
                                              ParserTemp& temp,
                                              const BlockType block,
                                              const char*& next)
+#line 1910 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.operand_count = decode_int(next);
 }
@@ -1753,6 +1850,7 @@ void ParserData::handle_decode_operand_count(ParserData& prsd,
 void ParserData::handle_encode_instruction_list(const ParserData& prsd,
                                                 const BlockType block,
                                                 ostream& os)
+#line 1923 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     //
@@ -1991,6 +2089,7 @@ void ParserData::handle_encode_instruction_list(const ParserData& prsd,
             
             }
             
+#line 2063 "u:\\hoshi\\raw\\ParserData.cpp"
         }
 
     }
@@ -2008,6 +2107,7 @@ void ParserData::handle_decode_instruction_list(ParserData& prsd,
                                                 ParserTemp& temp,
                                                 const BlockType block,
                                                 const char*& next)
+#line 2078 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     //
@@ -2263,6 +2363,7 @@ void ParserData::handle_decode_instruction_list(ParserData& prsd,
             
             }
             
+#line 2235 "u:\\hoshi\\raw\\ParserData.cpp"
         }
 
     }
@@ -2279,6 +2380,7 @@ void ParserData::handle_decode_instruction_list(ParserData& prsd,
 void ParserData::handle_encode_register_count(const ParserData& prsd,
                                               const BlockType block,
                                               ostream& os)
+#line 2250 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.register_count, os);
 }
@@ -2287,6 +2389,7 @@ void ParserData::handle_decode_register_count(ParserData& prsd,
                                               ParserTemp& temp,
                                               const BlockType block,
                                               const char*& next)
+#line 2256 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.register_count = decode_int(next);
 }
@@ -2301,6 +2404,7 @@ void ParserData::handle_decode_register_count(ParserData& prsd,
 void ParserData::handle_encode_register_list(const ParserData& prsd,
                                              const BlockType block,
                                              ostream& os)
+#line 2269 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.register_count; i++)
@@ -2315,6 +2419,7 @@ void ParserData::handle_decode_register_list(ParserData& prsd,
                                              ParserTemp& temp,
                                              const BlockType block,
                                              const char*& next)
+#line 2281 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.register_list = new VCodeRegister[prsd.register_count];
@@ -2337,6 +2442,7 @@ void ParserData::handle_decode_register_list(ParserData& prsd,
 void ParserData::handle_encode_ast_count(const ParserData& prsd,
                                          const BlockType block,
                                          ostream& os)
+#line 2302 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.ast_count, os);
 }
@@ -2345,6 +2451,7 @@ void ParserData::handle_decode_ast_count(ParserData& prsd,
                                          ParserTemp& temp,
                                          const BlockType block,
                                          const char*& next)
+#line 2308 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.ast_count = decode_int(next);
 }
@@ -2359,6 +2466,7 @@ void ParserData::handle_decode_ast_count(ParserData& prsd,
 void ParserData::handle_encode_string_count(const ParserData& prsd,
                                             const BlockType block,
                                             ostream& os)
+#line 2321 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     encode_int(prsd.string_count, os);
 }
@@ -2367,6 +2475,7 @@ void ParserData::handle_decode_string_count(ParserData& prsd,
                                             ParserTemp& temp,
                                             const BlockType block,
                                             const char*& next)
+#line 2327 "u:\\hoshi\\raw\\ParserData.cpp"
 {
     prsd.string_count = decode_int(next);
 }
@@ -2381,6 +2490,7 @@ void ParserData::handle_decode_string_count(ParserData& prsd,
 void ParserData::handle_encode_string_list(const ParserData& prsd,
                                            const BlockType block,
                                            ostream& os)
+#line 2340 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     for (int i = 0; i < prsd.string_count; i++)
@@ -2394,6 +2504,7 @@ void ParserData::handle_decode_string_list(ParserData& prsd,
                                            ParserTemp& temp,
                                            const BlockType block,
                                            const char*& next)
+#line 2351 "u:\\hoshi\\raw\\ParserData.cpp"
 {
 
     prsd.string_list = new string[prsd.string_count];

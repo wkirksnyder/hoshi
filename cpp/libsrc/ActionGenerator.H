@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 //
 //  ActionGenerator                                                        
 //  ---------------                                                        
@@ -104,6 +105,7 @@ private:
                                             Ast* root,
                                             Context& ctx);
     
+#line 142 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 
     //
     //  Expression coding functions 
@@ -172,6 +174,7 @@ private:
                                               Ast* root,
                                               Context& ctx);
     
+#line 212 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 
     //
     //  Condition coding functions 
@@ -240,6 +243,7 @@ private:
                                      Ast* root,
                                      Context& ctx);
     
+#line 282 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 
 };
 

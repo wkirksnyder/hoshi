@@ -8,7 +8,6 @@
 options
 
     lookaheads = 2
-    error_recovery = true
     conflicts = 0
     case_sensitive = true
 

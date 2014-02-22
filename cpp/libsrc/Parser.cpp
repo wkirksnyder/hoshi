@@ -1,3 +1,4 @@
+#line 446 "u:\\hoshi\\raw\\Parser.cpp"
 //
 //  Parser                                                                 
 //  ------                                                                 
@@ -46,7 +47,8 @@ string Parser::string_missing{""};
 
 Parser::Parser()
 {
-    initialize();
+    static once_flag flag;
+    call_once(flag, initialize);
     impl = new ParserImpl();
 }
 
@@ -94,32 +96,13 @@ Parser& Parser::operator=(Parser&& rhs) noexcept
 //  unlikely to create all that many, and if he does he will probably go  
 //  through an expensive generation process on each one. We add a little  
 //  bit to the expense of that to guarantee that each class is statically 
-//  initialized appropritately.                                           
+//  initialized appropriately.                                           
 //
 
 void Parser::initialize()
 {
-
-    static volatile bool finished = false;
-    static mutex initialize_mutex;
-
-    if (finished)
-    {
-        return;
-    }
-
-    lock_guard<mutex> initialize_guard(initialize_mutex);
-
-    if (finished)
-    {
-        return;
-    }
-
     ParserEngine::initialize();
     ParserImpl::initialize();
-
-    finished = true;
-
 }
 
 //

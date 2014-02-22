@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 //
 //  ScannerGenerator                                                       
 //  ----------------                                                       
@@ -500,6 +501,7 @@ private:
                                              Ast* root,
                                              Context& ctx);
     
+#line 366 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
     //
     //  DFA creation stuff                                                
     //  ------------------                                                

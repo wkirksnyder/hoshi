@@ -1,3 +1,4 @@
+#line 66 "u:\\hoshi\\raw\\LibraryToken.cpp"
 //
 //  LibraryToken                                                          
 //  ------------                                                          
@@ -66,7 +67,7 @@ LibraryToken LibraryToken::library_token_list[] =
 
     {
       "float",                  // name
-      "[1-9][0-9]*\\.[0-9]+([eE][+\\-]?[1-9][0-9]*)?",
+      "[0-9]+\\.[0-9]+([eE][+\\-]?[1-9][0-9]*)?",
                                 // regex_string
       "",                       // description
       100,                      // precedence

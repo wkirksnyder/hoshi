@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\AstType.cpp"
 //
 //  AstType                                                             
 //  -------                                                             
@@ -147,6 +148,7 @@ enum AstType : int
     AstActionNot            = 124,
     AstActionDumpStack      = 125,
     AstActionTokenCount     = 126
+#line 38 "u:\\hoshi\\raw\\AstType.cpp"
 };
 
 } // namespace hoshi

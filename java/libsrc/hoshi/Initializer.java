@@ -1,3 +1,4 @@
+//#line 120 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  Initializer                                                           
 //  -----------                                                           

@@ -1,3 +1,4 @@
+//#line 236 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  ErrorType                                                              
 //  ---------                                                              
@@ -36,6 +37,7 @@ public enum ErrorType {
     ErrorSyntax,
     ErrorLexical,
     ErrorAstIndex;
+//#line 267 "u:\\hoshi\\raw\\JavaWrapper.java"
 
     private int value;
     private static HashMap<Integer, ErrorType> valueMap = new HashMap<Integer, ErrorType>();
@@ -63,6 +65,7 @@ public enum ErrorType {
         valueMap.put(18, ErrorSyntax);
         valueMap.put(19, ErrorLexical);
         valueMap.put(20, ErrorAstIndex);
+//#line 285 "u:\\hoshi\\raw\\JavaWrapper.java"
 
     }
 

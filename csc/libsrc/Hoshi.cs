@@ -320,19 +320,23 @@ internal class TypeConvert
     public static string KindMapOut(Dictionary<string, int> kindMap)
     {
 
-        if (kindMap == null)
-        {
-            return "";
-        }
-
         StringWriter writer = new StringWriter();
 
-        EncodeLong(writer, kindMap.Count);
-
-        foreach (string key in kindMap.Keys)
+        if (kindMap == null)
         {
-            EncodeString(writer, key);
-            EncodeLong(writer, kindMap[key]);
+            EncodeLong(writer, 0);
+        }
+        else
+        {
+
+            EncodeLong(writer, kindMap.Count);
+
+            foreach (string key in kindMap.Keys)
+            {
+                EncodeString(writer, key);
+                EncodeLong(writer, kindMap[key]);
+            }
+
         }
 
         return writer.ToString();

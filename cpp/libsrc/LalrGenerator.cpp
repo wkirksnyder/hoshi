@@ -1,3 +1,4 @@
+#line 587 "u:\\hoshi\\raw\\LalrGenerator.cpp"
 //
 //  LalrGenerator                                                         
 //  -------------                                                         

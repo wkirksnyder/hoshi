@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\Ast.cpp"
 //
 //  Ast (Abstract Syntax Tree)                                          
 //  --------------------------                                          

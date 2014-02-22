@@ -1,3 +1,4 @@
+#line 2 "u:\\hoshi\\raw\\Grammar.cpp"
 //
 //  Grammar                                                               
 //  -------                                                               
@@ -299,6 +300,7 @@ private:
     static void handle_triple_string(Grammar& gram, Ast* root, Context& ctx);
     static void handle_true(Grammar& gram, Ast* root, Context& ctx);
     static void handle_false(Grammar& gram, Ast* root, Context& ctx);
+#line 308 "u:\\hoshi\\raw\\Grammar.cpp"
 
     //
     //  Debugging utilities.
