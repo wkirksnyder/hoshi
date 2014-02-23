@@ -1,10 +1,13 @@
 hoshi
 =====
 
-Hoshi parser generator library. It's in pretty good shape now. I want
-to provide a description of what it will do, what works now, and the
-next steps. Hopefully this will help you decide whether to check back
-later.
+Hoshi parser generator library. The code is in pretty good shape now,
+the documentation is in source form in the doc directory or launchable
+here: www.feishiz.com/hoshi/hoshi.html. The documentation could stand
+more work but it's usuable if you are a bit adventurous. The biggest
+problem right now is the distribution mechanism. All the sources are
+on github, but you'll have to build it yourself. I need to work on
+that.
 
 Hoshi is a parser generator implemented as a native code library in
 C++11. Most parser generators are implemented as code generators and
@@ -44,14 +47,4 @@ The most important features are:
    Those wrappers have been created in Java, C# and python so far.
 
  - There is a web page of documentation.
-
-Everything up to this point works. The documentation could certainly
-be better, but it's probably usable for an adventurous user.
-
-The weakest part right now is some sort of distribution system but I
-need to think about that a bit and maybe do some research. Github
-seems to be designed for collaboration, not distribution. I need to
-create pre-compiled versions of the source on several platforms and
-host it somewhere. It's not really acceptable that someone interested
-in using Hoshi in Java needs a C++ compiler to build it.
 
