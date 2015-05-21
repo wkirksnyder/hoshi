@@ -1,4 +1,3 @@
-#line 446 "u:\\hoshi\\raw\\Parser.cpp"
 //
 //  Parser                                                                 
 //  ------                                                                 

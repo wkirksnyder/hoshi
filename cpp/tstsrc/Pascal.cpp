@@ -1,4 +1,3 @@
-#line 303 "u:\\hoshi\\raw\\cpp.tst"
 //
 //  Pascal Test                                                            
 //  -----------                                                            

@@ -1,4 +1,3 @@
-#line 64 "u:\\hoshi\\raw\\CodeGenerator.cpp"
 //
 //  CodeGenerator                                                       
 //  -------------                                                       
@@ -325,7 +324,7 @@ private:
 
     struct OpcodeInfo
     {
-        char* name;
+        const char* name;
         bool is_branch;
         bool is_no_follow;
         OpcodeType inverse_branch;

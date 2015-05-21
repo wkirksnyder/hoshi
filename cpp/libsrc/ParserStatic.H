@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\ParserStatic.cpp"
 //
 //  ParserStatic                                                           
 //  ------------                                                           
@@ -11,6 +10,7 @@
 //  These should all be trivial and inline.                                
 //
 
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -44,7 +44,6 @@ enum ExceptionType : int
     ExceptionGrammar = 1,
     ExceptionSource  = 2,
     ExceptionUnknown = 3
-#line 57 "u:\\hoshi\\raw\\ParserStatic.cpp"
 };
 
 //
@@ -71,7 +70,6 @@ class ParserStatic
 {
 public:
 
-#line 125 "u:\\hoshi\\raw\\ParserStatic.cpp"
     //
     //  parser_new_parser
     //  -----------------
@@ -236,7 +234,7 @@ public:
     static void parser_generate(ptrdiff_t this_handle, 
                                 ExceptionHandler exception_handler, 
                                 const std::string& source, 
-                                std::map<std::string, int>& kind_map, 
+                                const std::map<std::string, int>& kind_map, 
                                 int64_t debug_flags)
     {
         
@@ -625,7 +623,7 @@ public:
     static void parser_decode(ptrdiff_t this_handle, 
                               ExceptionHandler exception_handler, 
                               const std::string& str, 
-                              std::map<std::string, int>& kind_map)
+                              const std::map<std::string, int>& kind_map)
     {
         
         try
@@ -643,7 +641,6 @@ public:
         
     }
 
-#line 152 "u:\\hoshi\\raw\\ParserStatic.cpp"
 private:
 
     //

@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 //
 //  ActionGenerator                                                        
 //  ---------------                                                        
@@ -83,7 +82,7 @@ private:
                                        Ast* root,
                                        Context& ctx);
 
-    static char *statement_handler_name[];
+    static const char* statement_handler_name[];
 
     static void handle_statement(ActionGenerator& actg,
                                  Ast* root,
@@ -105,7 +104,6 @@ private:
                                             Ast* root,
                                             Context& ctx);
     
-#line 142 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 
     //
     //  Expression coding functions 
@@ -120,7 +118,7 @@ private:
                                         Ast* root,
                                         Context& ctx);
 
-    static char *expression_handler_name[];
+    static const char* expression_handler_name[];
 
     static void handle_expression(ActionGenerator& actg,
                                   Ast* root,
@@ -174,7 +172,6 @@ private:
                                               Ast* root,
                                               Context& ctx);
     
-#line 212 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 
     //
     //  Condition coding functions 
@@ -189,7 +186,7 @@ private:
                                        Ast* root,
                                        Context& ctx);
 
-    static char *condition_handler_name[];
+    static const char* condition_handler_name[];
 
     static void handle_condition(ActionGenerator& actg,
                                  Ast* root,
@@ -243,7 +240,6 @@ private:
                                      Ast* root,
                                      Context& ctx);
     
-#line 282 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 
 };
 

@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\ParserData.cpp"
 //
 //  ParserData                                                             
 //  ----------                                                             
@@ -101,7 +100,6 @@ enum BlockType : int
     BlockStringCount       =  47,
     BlockStringList        =  48,
     BlockEof               =  49
-#line 68 "u:\\hoshi\\raw\\ParserData.cpp"
 };
 
 //
@@ -485,7 +483,6 @@ private:
                                   const BlockType block,
                                   std::ostream& os);
     
-#line 299 "u:\\hoshi\\raw\\ParserData.cpp"
     static EncodeHandler encode_handler[];
 
     //
@@ -752,7 +749,6 @@ private:
                                   const BlockType block,
                                   const char*& next);
     
-#line 364 "u:\\hoshi\\raw\\ParserData.cpp"
     static DecodeHandler decode_handler[];
 
     //

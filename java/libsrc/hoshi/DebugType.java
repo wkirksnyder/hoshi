@@ -1,4 +1,3 @@
-//#line 173 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  DebugType                                                       
 //  ----------                                                       
@@ -25,7 +24,6 @@ public enum DebugType {
     DebugVCodeExec   (1 <<  8),
     DebugScanToken   (1 <<  9),
     DebugParseAction (1 << 10);
-//#line 202 "u:\\hoshi\\raw\\JavaWrapper.java"
 
     private long bits;
 

@@ -1,4 +1,3 @@
-#line 66 "u:\\hoshi\\raw\\LibraryToken.cpp"
 //
 //  LibraryToken                                                          
 //  ------------                                                          

@@ -1,4 +1,3 @@
-#line 95 "u:\\hoshi\\raw\\ErrorHandler.cpp"
 //
 //  ErrorHandler                                                          
 //  ------------                                                          
@@ -60,7 +59,6 @@ string ErrorHandler::error_tag_list[] =
     "Syntax",
     "Lexical",
     "AstIndex" 
-#line 151 "u:\\hoshi\\raw\\ErrorHandler.cpp"
 };
 
 //
@@ -90,7 +88,6 @@ int ErrorHandler::error_severity_list[] =
     100,  // Syntax
     100,  // Lexical
     100   // AstIndex
-#line 175 "u:\\hoshi\\raw\\ErrorHandler.cpp"
 };
 
 //

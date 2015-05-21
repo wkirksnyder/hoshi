@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\CscWrapper.cpp"
 //
 //  CscWrapper                                                           
 //  ----------                                                           
@@ -900,5 +899,4 @@ void csc_Parser_decode(ptrdiff_t this_handle,
     
 }
 
-#line 420 "u:\\hoshi\\raw\\CscWrapper.cpp"
 #endif // _WIN64

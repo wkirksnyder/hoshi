@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\Source.cpp"
 //
 //  Source                                                                 
 //  ------                                                                 
@@ -13,7 +12,9 @@
 //  the remainder of the program.                                          
 //
 
+#ifndef NOCODECVT
 #include <codecvt>
+#endif
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -41,11 +42,17 @@ using namespace std;
 int64_t Source::char_length(const string& str)
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8<char32_t>, char32_t> myconv;
+#endif
 
     try
     {
+#ifndef NOCODECVT
         return myconv.from_bytes(str).length();
+#else
+        return str.length();
+#endif
     }
     catch (...)
     {
@@ -66,15 +73,22 @@ int64_t Source::char_length(const string& str)
 string Source::to_ascii_chop(const string& str)
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8<char32_t>, char32_t> myconv;
+#endif
 
     try
     {
 
         ostringstream ost;
 
+#ifndef NOCODECVT
         for (auto c: myconv.from_bytes(str))
         {
+#else
+        for (auto c: str)
+        {
+#endif
 
             if (c < 0x20)
 	    {
@@ -162,11 +176,22 @@ string Source::to_ascii_cpp(const string& str)
 u32string Source::to_utf32(const string& str)
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8<char32_t>, char32_t> myconv;
+#endif
 
     try
     {
+#ifndef NOCODECVT
         return u32string(myconv.from_bytes(str).data());
+#else
+        u32string result;
+        for (auto c: str)
+        {
+            result += static_cast<char32_t>(c);
+        }
+        return result;
+#endif
     }
     catch (...)
     {
@@ -224,7 +249,9 @@ char32_t Source::get_char(int64_t location) const
 string Source::get_string(int64_t first, int64_t last) const
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8<char32_t>, char32_t> myconv;
+#endif
 
     if (last < 0)
     {
@@ -241,7 +268,16 @@ string Source::get_string(int64_t first, int64_t last) const
         return "";
     }
 
+#ifndef NOCODECVT
     return myconv.to_bytes(source.data() + first, source.data() + last);
+#else
+    string result;
+    for (auto c = source.data() + first; c < source.data() + last; c++)
+    {
+        result += static_cast<char>(*c);
+    }
+    return result;
+#endif
 
 }
 
@@ -307,11 +343,21 @@ void Source::get_source_position(int64_t location,
 Source::Source(const string& str)
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8<char32_t>, char32_t> myconv;
+#endif
 
     try
     {
+#ifndef NOCODECVT
         source = myconv.from_bytes(str);
+#else
+        source.clear();
+        for (auto c: str)
+        {
+            source += static_cast<char32_t>(c);
+        }
+#endif
     }
     catch (...)
     {
@@ -330,7 +376,9 @@ Source::Source(const string& str)
 SourceFile::SourceFile(const string& file_name)
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8<char32_t>, char32_t> myconv;
+#endif
 
     ifstream strm(file_name.c_str(), ifstream::binary);
 
@@ -351,7 +399,15 @@ SourceFile::SourceFile(const string& file_name)
 
     try
     {
+#ifndef NOCODECVT
         source = myconv.from_bytes(buffer, buffer + file_length);
+#else
+        source.clear();
+        for (auto c = buffer; c < buffer + file_length; c++)
+        {
+            source += static_cast<char32_t>(*c);
+        }
+#endif
     }
     catch (...)
     {

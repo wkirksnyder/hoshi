@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\ParseAction.cpp"
 //
 //  ParseAction                                                            
 //  -----------                                                            

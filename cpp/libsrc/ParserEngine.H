@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\ParserEngine.cpp"
 //
 //  ParserEngine                                                         
 //  ------------                                                         
@@ -16,6 +15,7 @@
 #include <vector>
 #include <set>
 #include "OpcodeType.H"
+#include "ErrorHandler.H"
 #include "Parser.H"
 #include "ParseAction.H"
 
@@ -153,8 +153,8 @@ private:
     {
         VCodeHandler handler;
         OpcodeType opcode;
-        char* handler_name;
-        char* opcode_name;
+        const char* handler_name;
+        const char* opcode_name;
     } vcode_handler_info[];
 
     static void handle_error(ParserEngine& prse,
@@ -352,7 +352,6 @@ private:
                                             int64_t& pc,
                                             int64_t location);
     
-#line 214 "u:\\hoshi\\raw\\ParserEngine.cpp"
 
     //
     //  Utilities. 

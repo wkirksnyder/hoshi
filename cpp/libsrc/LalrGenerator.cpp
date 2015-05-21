@@ -1,4 +1,3 @@
-#line 587 "u:\\hoshi\\raw\\LalrGenerator.cpp"
 //
 //  LalrGenerator                                                         
 //  -------------                                                         
@@ -1608,6 +1607,7 @@ void LalrGenerator::extend_lookaheads()
 
                 StateStack next_stack = stack;
                 next_stack.get().push_back(goto_state);
+
                 for (auto s: follow_sources(next_stack, mp.first, terminal))
                 {
                     stack_set.insert(s);
@@ -1664,10 +1664,14 @@ void LalrGenerator::extend_lookaheads()
 
                 for (State* q: stack.get()[0]->lookback[distance])
                 {
-                    for (auto s: follow_sources(StateStack(q), item->rule->lhs, terminal))
+
+                    StateStack temp_stack(q);
+
+                    for (auto s: follow_sources(temp_stack, item->rule->lhs, terminal))
                     {
                         stack_set.insert(s);
                     }
+
                 }
 
             }
@@ -1810,7 +1814,9 @@ void LalrGenerator::extend_lookaheads()
                     {
 
                         visited.clear();
-                        for (auto s: follow_sources(StateStack(p), lhs, mp.first))
+                        StateStack temp_stack(p);
+
+                        for (auto s: follow_sources(temp_stack, lhs, mp.first))
                         {
                             sources[action].insert(s);
                         }

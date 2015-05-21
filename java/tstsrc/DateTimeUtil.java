@@ -1,4 +1,3 @@
-//#line 124 "u:\\hoshi\\raw\\Java.tst"
 //
 //  DateTime Parser                                                       
 //  ---------------                                                       

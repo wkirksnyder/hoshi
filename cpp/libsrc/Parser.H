@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\Parser.cpp"
 //
 //  Parser                                                                 
 //  ------                                                                 
@@ -13,6 +12,7 @@
 #ifndef HOSHI_PARSER_H
 #define HOSHI_PARSER_H
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <exception>
@@ -95,7 +95,6 @@ enum DebugType : int64_t
     DebugVCodeExec   = 1 <<   8,
     DebugScanToken   = 1 <<   9,
     DebugParseAction = 1 <<  10
-#line 101 "u:\\hoshi\\raw\\Parser.cpp"
 };
 
 //
@@ -133,7 +132,6 @@ enum ErrorType : int
     ErrorSyntax            =  18,
     ErrorLexical           =  19,
     ErrorAstIndex          =  20
-#line 131 "u:\\hoshi\\raw\\Parser.cpp"
 };
 
 //

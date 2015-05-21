@@ -1,4 +1,3 @@
-#line 1472 "u:\\hoshi\\raw\\cpp.tst"
 #include <mutex>
 #include <iostream>
 #include <chrono>

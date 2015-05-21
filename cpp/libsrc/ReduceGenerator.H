@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 //
 //  ReduceGenerator                                                       
 //  ---------------                                                       
@@ -115,7 +114,7 @@ private:
                                     Ast* root,
                                     Context& ctx);
 
-    static char *former_handler_name[];
+    static const char* former_handler_name[];
 
     static void handle_former(ReduceGenerator& redg,
                               Ast* root,
@@ -173,7 +172,6 @@ private:
                                         Ast* root,
                                         Context& ctx);
     
-#line 174 "u:\\hoshi\\raw\\ReduceGenerator.cpp"
 
 };
 

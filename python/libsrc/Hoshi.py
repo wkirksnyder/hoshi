@@ -106,17 +106,17 @@ class ExceptionType:
 #
 
 class ErrorType:
-    ErrorProgress          = 1 <<  0
-    ErrorAstHandlers       = 1 <<  1
-    ErrorGrammar           = 1 <<  2
-    ErrorGrammarAst        = 1 <<  3
-    ErrorLalr              = 1 <<  4
-    ErrorScanner           = 1 <<  5
-    ErrorActions           = 1 <<  6
-    ErrorICode             = 1 <<  7
-    ErrorVCodeExec         = 1 <<  8
-    ErrorScanToken         = 1 <<  9
-    ErrorParseAction       = 1 << 10
+    ErrorProgress          =  0
+    ErrorAstHandlers       =  1
+    ErrorGrammar           =  2
+    ErrorGrammarAst        =  3
+    ErrorLalr              =  4
+    ErrorScanner           =  5
+    ErrorActions           =  6
+    ErrorICode             =  7
+    ErrorVCodeExec         =  8
+    ErrorScanToken         =  9
+    ErrorParseAction       = 10
 
 #
 #  DebugType                                                       

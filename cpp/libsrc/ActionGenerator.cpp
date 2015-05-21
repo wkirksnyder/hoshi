@@ -1,4 +1,3 @@
-#line 297 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 //
 //  ActionGenerator                                                        
 //  ---------------                                                        
@@ -167,10 +166,9 @@ void (*ActionGenerator::statement_handler[])(ActionGenerator& actg,
     handle_statement_error,             // ActionNot
     handle_statement_dump_stack,        // ActionDumpStack
     handle_statement_error              // ActionTokenCount
-#line 360 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 };
 
-char *ActionGenerator::statement_handler_name[]
+const char* ActionGenerator::statement_handler_name[]
 {
     "handle_statement_error",           // Unknown
     "handle_statement_error",           // Null
@@ -299,7 +297,6 @@ char *ActionGenerator::statement_handler_name[]
     "handle_statement_error",           // ActionNot
     "handle_statement_dump_stack",      // ActionDumpStack
     "handle_statement_error"            // ActionTokenCount
-#line 386 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 };
 
 //
@@ -440,10 +437,9 @@ void (*ActionGenerator::expression_handler[])(ActionGenerator& actg,
     handle_expression_relation,       // ActionNot
     handle_expression_error,          // ActionDumpStack
     handle_expression_token_count     // ActionTokenCount
-#line 421 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 };
 
-char *ActionGenerator::expression_handler_name[]
+const char* ActionGenerator::expression_handler_name[]
 {
     "handle_expression_error",        // Unknown
     "handle_expression_error",        // Null
@@ -572,7 +568,6 @@ char *ActionGenerator::expression_handler_name[]
     "handle_expression_relation",     // ActionNot
     "handle_expression_error",        // ActionDumpStack
     "handle_expression_token_count"   // ActionTokenCount
-#line 447 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 };
 
 //
@@ -713,10 +708,9 @@ void (*ActionGenerator::condition_handler[])(ActionGenerator& actg,
     handle_condition_not,              // ActionNot
     handle_condition_error,            // ActionDumpStack
     handle_condition_math              // ActionTokenCount
-#line 482 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 };
 
-char *ActionGenerator::condition_handler_name[]
+const char* ActionGenerator::condition_handler_name[]
 {
     "handle_condition_error",          // Unknown
     "handle_condition_error",          // Null
@@ -845,7 +839,6 @@ char *ActionGenerator::condition_handler_name[]
     "handle_condition_not",            // ActionNot
     "handle_condition_error",          // ActionDumpStack
     "handle_condition_math"            // ActionTokenCount
-#line 508 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 };
 
 //
@@ -936,11 +929,9 @@ void ActionGenerator::handle_statement(ActionGenerator& actg,
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
-#line 602 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 void ActionGenerator::handle_statement_error(ActionGenerator& actg,
                                              Ast* root,
                                              Context& ctx)
-#line 603 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     cout << "No ActionGenerator::statement handler for Ast!" << endl << endl;
     actg.prsi.dump_grammar_ast(root);
@@ -957,7 +948,6 @@ void ActionGenerator::handle_statement_error(ActionGenerator& actg,
 void ActionGenerator::handle_statement_statement_list(ActionGenerator& actg,
                                                       Ast* root,
                                                       Context& ctx)
-#line 618 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
 
     for (int i = 0; i < root->get_num_children(); i++)
@@ -977,7 +967,6 @@ void ActionGenerator::handle_statement_statement_list(ActionGenerator& actg,
 void ActionGenerator::handle_statement_assign(ActionGenerator& actg,
                                               Ast* root,
                                               Context& ctx)
-#line 636 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
 
     Context cctx;
@@ -1013,7 +1002,6 @@ void ActionGenerator::handle_statement_assign(ActionGenerator& actg,
 void ActionGenerator::handle_statement_dump_stack(ActionGenerator& actg,
                                                   Ast* root,
                                                   Context& ctx)
-#line 670 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     actg.code.emit(OpcodeType::OpcodeDumpStack, root->get_location());
 }
@@ -1062,11 +1050,9 @@ void ActionGenerator::handle_expression(ActionGenerator& actg,
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
-#line 722 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 void ActionGenerator::handle_expression_error(ActionGenerator& actg,
                                               Ast* root,
                                               Context& ctx)
-#line 723 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     cout << "No ActionGenerator::expression handler for Ast!" << endl << endl;
     actg.prsi.dump_grammar_ast(root);
@@ -1085,7 +1071,6 @@ void ActionGenerator::handle_expression_error(ActionGenerator& actg,
 void ActionGenerator::handle_expression_math_binop(ActionGenerator& actg,
                                                    Ast* root,
                                                    Context& ctx)
-#line 739 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
 
     Context cctx;
@@ -1130,7 +1115,6 @@ void ActionGenerator::handle_expression_math_binop(ActionGenerator& actg,
 void ActionGenerator::handle_expression_add(ActionGenerator& actg,
                                             Ast* root,
                                             Context& ctx)
-#line 782 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeAdd;
     handle_expression_math_binop(actg, root, ctx);
@@ -1139,7 +1123,6 @@ void ActionGenerator::handle_expression_add(ActionGenerator& actg,
 void ActionGenerator::handle_expression_subtract(ActionGenerator& actg,
                                                  Ast* root,
                                                  Context& ctx)
-#line 789 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeSubtract;
     handle_expression_math_binop(actg, root, ctx);
@@ -1148,7 +1131,6 @@ void ActionGenerator::handle_expression_subtract(ActionGenerator& actg,
 void ActionGenerator::handle_expression_multiply(ActionGenerator& actg,
                                                  Ast* root,
                                                  Context& ctx)
-#line 796 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeMultiply;
     handle_expression_math_binop(actg, root, ctx);
@@ -1157,7 +1139,6 @@ void ActionGenerator::handle_expression_multiply(ActionGenerator& actg,
 void ActionGenerator::handle_expression_divide(ActionGenerator& actg,
                                                Ast* root,
                                                Context& ctx)
-#line 803 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeDivide;
     handle_expression_math_binop(actg, root, ctx);
@@ -1175,7 +1156,6 @@ void ActionGenerator::handle_expression_divide(ActionGenerator& actg,
 void ActionGenerator::handle_expression_math_unop(ActionGenerator& actg,
                                                   Ast* root,
                                                   Context& ctx)
-#line 818 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
 
     Context cctx;
@@ -1210,7 +1190,6 @@ void ActionGenerator::handle_expression_math_unop(ActionGenerator& actg,
 void ActionGenerator::handle_expression_unary_minus(ActionGenerator& actg,
                                                     Ast* root,
                                                     Context& ctx)
-#line 851 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeUnaryMinus;
     handle_expression_math_unop(actg, root, ctx);
@@ -1226,7 +1205,6 @@ void ActionGenerator::handle_expression_unary_minus(ActionGenerator& actg,
 void ActionGenerator::handle_expression_relation(ActionGenerator& actg,
                                                  Ast* root,
                                                  Context& ctx)
-#line 873 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
 
     Context cctx;
@@ -1286,7 +1264,6 @@ void ActionGenerator::handle_expression_relation(ActionGenerator& actg,
 void ActionGenerator::handle_expression_identifier(ActionGenerator& actg,
                                                    Ast* root,
                                                    Context& ctx)
-#line 931 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.target_register = actg.code.get_register(root->get_lexeme(), 0);
 }
@@ -1301,7 +1278,6 @@ void ActionGenerator::handle_expression_identifier(ActionGenerator& actg,
 void ActionGenerator::handle_expression_integer(ActionGenerator& actg,
                                                 Ast* root,
                                                 Context& ctx)
-#line 944 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.target_register = actg.code.get_register(root->get_lexeme(),
                                                  atol(root->get_lexeme().c_str()));
@@ -1317,7 +1293,6 @@ void ActionGenerator::handle_expression_integer(ActionGenerator& actg,
 void ActionGenerator::handle_expression_token_count(ActionGenerator& actg,
                                                     Ast* root,
                                                     Context& ctx)
-#line 958 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.target_register = actg.code.get_register("token_count", 0);
 }
@@ -1366,11 +1341,9 @@ void ActionGenerator::handle_condition(ActionGenerator& actg,
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
-#line 1010 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 void ActionGenerator::handle_condition_error(ActionGenerator& actg,
                                              Ast* root,
                                              Context& ctx)
-#line 1011 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     cout << "No ActionGenerator::condition handler for Ast!" << endl << endl;
     actg.prsi.dump_grammar_ast(root);
@@ -1387,7 +1360,6 @@ void ActionGenerator::handle_condition_error(ActionGenerator& actg,
 void ActionGenerator::handle_condition_math(ActionGenerator& actg,
                                             Ast* root,
                                             Context& ctx)
-#line 1033 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
 
     Context cctx;
@@ -1423,7 +1395,6 @@ void ActionGenerator::handle_condition_math(ActionGenerator& actg,
 void ActionGenerator::handle_condition_relation(ActionGenerator& actg,
                                                 Ast* root,
                                                 Context& ctx)
-#line 1066 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
 
     Context cctx;
@@ -1461,7 +1432,6 @@ void ActionGenerator::handle_condition_relation(ActionGenerator& actg,
 void ActionGenerator::handle_condition_equal(ActionGenerator& actg,
                                              Ast* root,
                                              Context& ctx)
-#line 1102 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeBranchEqual;
     handle_condition_relation(actg, root, ctx);
@@ -1470,7 +1440,6 @@ void ActionGenerator::handle_condition_equal(ActionGenerator& actg,
 void ActionGenerator::handle_condition_not_equal(ActionGenerator& actg,
                                                  Ast* root,
                                                  Context& ctx)
-#line 1109 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeBranchNotEqual;
     handle_condition_relation(actg, root, ctx);
@@ -1479,7 +1448,6 @@ void ActionGenerator::handle_condition_not_equal(ActionGenerator& actg,
 void ActionGenerator::handle_condition_less_than(ActionGenerator& actg,
                                                  Ast* root,
                                                  Context& ctx)
-#line 1116 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeBranchLessThan;
     handle_condition_relation(actg, root, ctx);
@@ -1488,7 +1456,6 @@ void ActionGenerator::handle_condition_less_than(ActionGenerator& actg,
 void ActionGenerator::handle_condition_less_equal(ActionGenerator& actg,
                                                   Ast* root,
                                                   Context& ctx)
-#line 1123 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeBranchLessEqual;
     handle_condition_relation(actg, root, ctx);
@@ -1497,7 +1464,6 @@ void ActionGenerator::handle_condition_less_equal(ActionGenerator& actg,
 void ActionGenerator::handle_condition_greater_than(ActionGenerator& actg,
                                                     Ast* root,
                                                     Context& ctx)
-#line 1130 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeBranchGreaterThan;
     handle_condition_relation(actg, root, ctx);
@@ -1506,7 +1472,6 @@ void ActionGenerator::handle_condition_greater_than(ActionGenerator& actg,
 void ActionGenerator::handle_condition_greater_equal(ActionGenerator& actg,
                                                      Ast* root,
                                                      Context& ctx)
-#line 1137 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
     ctx.opcode = OpcodeType::OpcodeBranchGreaterEqual;
     handle_condition_relation(actg, root, ctx);
@@ -1522,7 +1487,6 @@ void ActionGenerator::handle_condition_greater_equal(ActionGenerator& actg,
 void ActionGenerator::handle_condition_and(ActionGenerator& actg,
                                            Ast* root,
                                            Context& ctx)
-#line 1151 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
   
     Context cctx;
@@ -1552,7 +1516,6 @@ void ActionGenerator::handle_condition_and(ActionGenerator& actg,
 void ActionGenerator::handle_condition_or(ActionGenerator& actg,
                                           Ast* root,
                                           Context& ctx)
-#line 1179 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
   
     Context cctx;
@@ -1582,7 +1545,6 @@ void ActionGenerator::handle_condition_or(ActionGenerator& actg,
 void ActionGenerator::handle_condition_not(ActionGenerator& actg,
                                            Ast* root,
                                            Context& ctx)
-#line 1207 "u:\\hoshi\\raw\\ActionGenerator.cpp"
 {
   
     Context cctx;

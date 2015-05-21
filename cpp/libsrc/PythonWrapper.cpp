@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\PythonWrapper.cpp"
 //
 //  PythonWrapper                                                          
 //  -------------                                                          
@@ -12,6 +11,7 @@
 //  the cost should be negligible.                                         
 //
 
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include "Parser.H"
@@ -204,7 +204,6 @@ static map<string, int> kind_map_out(char* str_in)
 
 }
 
-#line 301 "u:\\hoshi\\raw\\PythonWrapper.cpp"
 //
 //  py_get_exception_type
 //  ---------------------

@@ -1,4 +1,3 @@
-#line 330 "u:\\hoshi\\raw\\Grammar.cpp"
 //
 //  Grammar                                                               
 //  -------                                                               
@@ -176,10 +175,9 @@ void (*Grammar::extract_handler[])(Grammar& gram, Ast* root, Context& ctx)
     handle_error,                    // ActionNot
     handle_error,                    // ActionDumpStack
     handle_error                     // ActionTokenCount
-#line 400 "u:\\hoshi\\raw\\Grammar.cpp"
 };
 
-char *Grammar::extract_handler_name[]
+const char* Grammar::extract_handler_name[]
 {
     "handle_error",                  // Unknown
     "handle_error",                  // Null
@@ -308,7 +306,6 @@ char *Grammar::extract_handler_name[]
     "handle_error",                  // ActionNot
     "handle_error",                  // ActionDumpStack
     "handle_error"                   // ActionTokenCount
-#line 424 "u:\\hoshi\\raw\\Grammar.cpp"
 };
 
 //
@@ -783,7 +780,6 @@ void Grammar::handle_extract(Grammar& gram, Ast* root, Context& ctx)
 //  accomodated. It's not a user error, it's a logic error.          
 //
 
-#line 900 "u:\\hoshi\\raw\\Grammar.cpp"
 void Grammar::handle_error(Grammar& gram, Ast* root, Context& ctx)
 {
     cout << "No extract handler for Ast!" << endl << endl;
@@ -800,7 +796,6 @@ void Grammar::handle_error(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_list(Grammar& gram, Ast* root, Context& ctx)
-#line 919 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     for (int i = 0; i < root->get_num_children(); i++)
@@ -839,7 +834,6 @@ void Grammar::handle_list(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_lookaheads(Grammar& gram, Ast* root, Context& ctx)
-#line 958 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstLookaheads) != ctx.processed_set.end())
@@ -866,7 +860,6 @@ void Grammar::handle_lookaheads(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_conflicts(Grammar& gram, Ast* root, Context& ctx)
-#line 985 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstConflicts) != ctx.processed_set.end())
@@ -892,7 +885,6 @@ void Grammar::handle_conflicts(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_error_recovery(Grammar& gram, Ast* root, Context& ctx)
-#line 1011 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstErrorRecovery) != ctx.processed_set.end())
@@ -917,7 +909,6 @@ void Grammar::handle_error_recovery(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_keep_whitespace(Grammar& gram, Ast* root, Context& ctx)
-#line 1036 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstKeepWhitespace) != ctx.processed_set.end())
@@ -942,7 +933,6 @@ void Grammar::handle_keep_whitespace(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_case_sensitive(Grammar& gram, Ast* root, Context& ctx)
-#line 1061 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstCaseSensitive) != ctx.processed_set.end())
@@ -967,7 +957,6 @@ void Grammar::handle_case_sensitive(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_declaration(Grammar& gram, Ast* root, Context& ctx)
-#line 1086 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     handle_extract(gram, root->get_child(0), ctx);
@@ -1026,7 +1015,6 @@ void Grammar::handle_token_declaration(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_option_list(Grammar& gram, Ast* root, Context& ctx)
-#line 1145 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     for (int i = 0; i < root->get_num_children(); i++)
@@ -1095,7 +1083,6 @@ void Grammar::handle_token_option_list(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_template(Grammar& gram, Ast* root, Context& ctx)
-#line 1214 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenTemplate) != ctx.processed_set.end())
@@ -1170,7 +1157,6 @@ void Grammar::handle_token_template(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_description(Grammar& gram, Ast* root, Context& ctx)
-#line 1289 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenDescription) != ctx.processed_set.end())
@@ -1202,7 +1188,6 @@ void Grammar::handle_token_description(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_regex_list(Grammar& gram, Ast* root, Context& ctx)
-#line 1321 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenRegexList) != ctx.processed_set.end())
@@ -1234,7 +1219,6 @@ void Grammar::handle_token_regex_list(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_precedence(Grammar& gram, Ast* root, Context& ctx)
-#line 1353 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenPrecedence) != ctx.processed_set.end())
@@ -1266,7 +1250,6 @@ void Grammar::handle_token_precedence(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_action(Grammar& gram, Ast* root, Context& ctx)
-#line 1385 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenAction) != ctx.processed_set.end())
@@ -1297,7 +1280,6 @@ void Grammar::handle_token_action(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_lexeme(Grammar& gram, Ast* root, Context& ctx)
-#line 1416 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenLexeme) != ctx.processed_set.end())
@@ -1329,7 +1311,6 @@ void Grammar::handle_token_lexeme(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_ignore(Grammar& gram, Ast* root, Context& ctx)
-#line 1448 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenIgnore) != ctx.processed_set.end())
@@ -1361,7 +1342,6 @@ void Grammar::handle_token_ignore(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_token_error(Grammar& gram, Ast* root, Context& ctx)
-#line 1480 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     if (ctx.processed_set.find(AstType::AstTokenError) != ctx.processed_set.end())
@@ -1394,7 +1374,6 @@ void Grammar::handle_token_error(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_rule(Grammar& gram, Ast* root, Context& ctx)
-#line 1513 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1424,7 +1403,6 @@ void Grammar::handle_rule(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_rule_rhs(Grammar& gram, Ast* root, Context& ctx)
-#line 1543 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     ctx.rule = gram.add_rule();
@@ -1450,7 +1428,6 @@ void Grammar::handle_rule_rhs(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_optional(Grammar& gram, Ast* root, Context& ctx)
-#line 1569 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1517,7 +1494,6 @@ void Grammar::handle_optional(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_zero_closure(Grammar& gram, Ast* root, Context& ctx)
-#line 1636 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1650,7 +1626,6 @@ void Grammar::handle_zero_closure(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_one_closure(Grammar& gram, Ast* root, Context& ctx)
-#line 1769 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1803,7 +1778,6 @@ void Grammar::handle_one_closure(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_group(Grammar& gram, Ast* root, Context& ctx)
-#line 1922 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1844,7 +1818,6 @@ void Grammar::handle_group(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_rule_precedence(Grammar& gram, Ast* root, Context& ctx)
-#line 1963 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1869,7 +1842,6 @@ void Grammar::handle_rule_precedence(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_rule_precedence_spec(Grammar& gram, Ast* root, Context& ctx)
-#line 1988 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1927,7 +1899,6 @@ void Grammar::handle_rule_precedence_spec(Grammar& gram, Ast* root, Context& ctx
 //
 
 void Grammar::handle_rule_left_assoc(Grammar& gram, Ast* root, Context& ctx)
-#line 2046 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.left_assoc = true;
 }
@@ -1941,7 +1912,6 @@ void Grammar::handle_rule_left_assoc(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_rule_right_assoc(Grammar& gram, Ast* root, Context& ctx)
-#line 2060 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.left_assoc = false;
 }
@@ -1955,7 +1925,6 @@ void Grammar::handle_rule_right_assoc(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_rule_operator_spec(Grammar& gram, Ast* root, Context& ctx)
-#line 2074 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     Context cctx;
@@ -1993,7 +1962,6 @@ void Grammar::handle_rule_operator_spec(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_nonterminal_reference(Grammar& gram, Ast* root, Context& ctx)
-#line 2112 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     handle_extract(gram, root->get_child(0), ctx);
@@ -2017,7 +1985,6 @@ void Grammar::handle_nonterminal_reference(Grammar& gram, Ast* root, Context& ct
 //
 
 void Grammar::handle_terminal_reference(Grammar& gram, Ast* root, Context& ctx)
-#line 2136 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     handle_extract(gram, root->get_child(0), ctx);
@@ -2092,7 +2059,6 @@ void Grammar::handle_terminal_reference(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_empty(Grammar& gram, Ast* root, Context& ctx)
-#line 2211 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.symbol = gram.epsilon_symbol;
 }
@@ -2105,7 +2071,6 @@ void Grammar::handle_empty(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_identifier(Grammar& gram, Ast* root, Context& ctx)
-#line 2224 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.lexeme = root->get_lexeme();
     ctx.location = root->get_location();
@@ -2121,7 +2086,6 @@ void Grammar::handle_identifier(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_integer(Grammar& gram, Ast* root, Context& ctx)
-#line 2240 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.lexeme = root->get_lexeme();
     ctx.location = root->get_location();
@@ -2136,7 +2100,6 @@ void Grammar::handle_integer(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_string(Grammar& gram, Ast* root, Context& ctx)
-#line 2255 "u:\\hoshi\\raw\\Grammar.cpp"
 {
 
     ctx.lexeme = root->get_lexeme();
@@ -2217,7 +2180,6 @@ void Grammar::handle_string(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_triple_string(Grammar& gram, Ast* root, Context& ctx)
-#line 2336 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.lexeme = root->get_lexeme();
     ctx.location = root->get_location();
@@ -2232,14 +2194,12 @@ void Grammar::handle_triple_string(Grammar& gram, Ast* root, Context& ctx)
 //
 
 void Grammar::handle_true(Grammar& gram, Ast* root, Context& ctx)
-#line 2351 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.bool_value = true;
     ctx.location = root->get_location();
 }
 
 void Grammar::handle_false(Grammar& gram, Ast* root, Context& ctx)
-#line 2358 "u:\\hoshi\\raw\\Grammar.cpp"
 {
     ctx.bool_value = false;
     ctx.location = root->get_location();

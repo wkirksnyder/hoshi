@@ -1,4 +1,3 @@
-//#line 934 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  Ast (Abstract Syntax Tree)                                              
 //  --------------------------                                              

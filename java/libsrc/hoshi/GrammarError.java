@@ -1,4 +1,3 @@
-//#line 306 "u:\\hoshi\\raw\\JavaWrapper.java"
 //
 //  GrammarError                                                 
 //  ------------                                                 

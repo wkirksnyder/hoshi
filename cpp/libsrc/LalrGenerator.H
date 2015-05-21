@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\LalrGenerator.cpp"
 //
 //  LalrGenerator                                                         
 //  -------------                                                         
@@ -33,6 +32,7 @@
 #define LALR_GENERATOR_H
 
 #include <cstdint>
+#include <climits>
 #include <cstring>
 #include <string>
 #include <vector>

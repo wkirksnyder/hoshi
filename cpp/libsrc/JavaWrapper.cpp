@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\JavaWrapper.cpp"
 //
 //  JavaWrapper                                                           
 //  -----------                                                           
@@ -12,7 +11,9 @@
 //  the cost should be negligible.                                        
 //
 
+#ifndef NOCODECVT
 #include <codecvt>
+#endif
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -199,12 +200,22 @@ static ExceptionHandler exception_handler_out(void** exception_handle)
 static jstring string_result_in(JNIEnv* env, void* result_handle)
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> myconv;
+#endif
 
     StringResultStruct* result_ptr = 
         reinterpret_cast<StringResultStruct*>(result_handle);
 
+#ifndef NOCODECVT
     u16string str_in = myconv.from_bytes(result_ptr->result_string);
+#else
+    u16string str_in;
+    for (auto c: result_ptr->result_string)
+    {
+        str_in += static_cast<char16_t>(c);
+    }
+#endif
 
     jstring java_string = env->NewString(static_cast<const jchar*>(str_in.data()),
                                          str_in.length());
@@ -272,7 +283,9 @@ static void check_exceptions(JNIEnv* env, void* exception_handle)
 static string string_out(JNIEnv* env, jstring str_in)
 {
 
+#ifndef NOCODECVT
     static wstring_convert<codecvt_utf8_utf16<char16_t>, char16_t> myconv;
+#endif
 
     jboolean is_copy;
     const jchar *sptr = env->GetStringCritical(str_in, &is_copy);
@@ -294,7 +307,16 @@ static string string_out(JNIEnv* env, jstring str_in)
 
     try
     {
+#ifndef NOCODECVT
         return myconv.to_bytes(str_out);
+#else
+        string result;
+        for (auto c: str_out)
+        {
+            result += static_cast<char>(c);
+        }
+        return result;
+#endif
     }
     catch (...)
     {
@@ -330,7 +352,6 @@ static map<string, int> kind_map_out(JNIEnv* env, jstring str_in)
 
 }
 
-#line 391 "u:\\hoshi\\raw\\JavaWrapper.cpp"
 //
 //  Java_hoshi_Initializer_initialize_1jni
 //  --------------------------------------
@@ -921,5 +942,4 @@ Java_hoshi_Parser_decode(JNIEnv* env,
     
 }
 
-#line 418 "u:\\hoshi\\raw\\JavaWrapper.cpp"
 

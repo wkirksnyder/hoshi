@@ -1,4 +1,3 @@
-#line 425 "u:\\hoshi\\raw\\CodeGenerator.cpp"
 //
 //  CodeGenerator                                                       
 //  -------------                                                       
@@ -84,7 +83,6 @@ CodeGenerator::OpcodeInfo CodeGenerator::opcode_table[] = {
     {  "BranchLessEqual",     true,   false,  OpcodeType::OpcodeBranchGreaterThan   },
     {  "BranchGreaterThan",   true,   false,  OpcodeType::OpcodeBranchLessEqual     },
     {  "BranchGreaterEqual",  true,   false,  OpcodeType::OpcodeBranchLessThan      }
-#line 508 "u:\\hoshi\\raw\\CodeGenerator.cpp"
 };
 
 //
@@ -841,7 +839,6 @@ void CodeGenerator::generate()
             
             }
             
-#line 1166 "u:\\hoshi\\raw\\CodeGenerator.cpp"
         }
 
     }
@@ -1032,7 +1029,6 @@ void CodeGenerator::optimize()
                     break;
                 }
                 
-#line 1411 "u:\\hoshi\\raw\\CodeGenerator.cpp"
             }
 
         }
@@ -1609,7 +1605,6 @@ void CodeGenerator::dump_icode(std::ostream& os, int indent) const
             
             }
             
-#line 1882 "u:\\hoshi\\raw\\CodeGenerator.cpp"
         }
 
         os << ost.str() << endl;

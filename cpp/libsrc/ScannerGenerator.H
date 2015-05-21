@@ -1,4 +1,3 @@
-#line 2 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
 //
 //  ScannerGenerator                                                       
 //  ----------------                                                       
@@ -307,7 +306,7 @@ private:
     State* nfa_start_state = nullptr;
 
     static void (*build_nfa_handler[])(ScannerGenerator& scan, Ast* root, Context& ctx);
-    static char *build_nfa_handler_name[];
+    static const char* build_nfa_handler_name[];
 
     static void handle_build_nfa(ScannerGenerator& scan,
                                  Ast* root,
@@ -501,7 +500,6 @@ private:
                                              Ast* root,
                                              Context& ctx);
     
-#line 366 "u:\\hoshi\\raw\\ScannerGenerator.cpp"
     //
     //  DFA creation stuff                                                
     //  ------------------                                                
