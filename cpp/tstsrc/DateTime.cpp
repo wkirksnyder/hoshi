@@ -289,7 +289,8 @@ system_clock::time_point parse_time(const string& source)
         throw invalid_argument("Invalid date-time");
     }
 
-    result_time_t = result_time_t - timezone - 86400;
+    //result_time_t = result_time_t - timezone - 86400;
+    result_time_t = result_time_t - 86400;
 
     //
     //  The library routine doesn't handle milliseconds so add them in. 
@@ -337,4 +338,5 @@ int main()
     }
 
 }
+
 

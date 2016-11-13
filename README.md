@@ -3,7 +3,7 @@ hoshi
 
 Hoshi parser generator library. The code is in pretty good shape now,
 the documentation is in source form in the doc directory or launchable
-here: www.feishiz.com/hoshi/hoshi.html. The documentation could stand
+here: www.konakoders.com/hoshi/hoshi.html. The documentation could stand
 more work but it's usuable if you are a bit adventurous. The biggest
 problem right now is the distribution mechanism. All the sources are
 on github, but you'll have to build it yourself. I need to work on
